@@ -1,230 +1,356 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Summer 2027 Internship Tracker</title>
-<style>
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; padding: 24px 12px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    background: #faf9f6; color: #1c1c1a;
-  }
-  #root { max-width: 720px; margin: 0 auto; }
-  input, select, textarea, button { font-family: inherit; }
-  a { color: inherit; }
-</style>
-</head>
-<body>
-<div id="root">Loading tracker…</div>
+import { useState, useEffect, useRef } from "react";
+import { ChevronDown, ChevronUp, MapPin, Clock, DollarSign, CalendarDays, ExternalLink, AlertTriangle } from "lucide-react";
 
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-<script type="text/babel" data-presets="react">
-const { useState, useEffect, useRef } = React;
-const h = React.createElement;
-
-/* ---------- tiny dependency-free icon glyphs (styled spans, not an icon library) ---------- */
-const Icon = ({ children, size = 12, color = "#8c8c88", style = {} }) =>
-  h("span", { style: { fontSize: size, color, lineHeight: 1, display: "inline-flex", ...style } }, children);
-const IPin      = p => h(Icon, p, "📍");
-const IClock    = p => h(Icon, p, "🕐");
-const IDollar   = p => h(Icon, p, "💲");
-const ICal      = p => h(Icon, p, "📅");
-const ILink     = p => h(Icon, p, "↗");
-const IWarn     = p => h(Icon, p, "⚠");
-const IChevDown = p => h(Icon, p, "▾");
-const IChevUp   = p => h(Icon, p, "▴");
-const ITrash    = p => h(Icon, p, "✕");
-const IPlus     = p => h(Icon, p, "＋");
-
-/* ---------- built-in opportunities (edit this list directly if you want to hand-edit rather than use the form) ---------- */
 const OPPS = [
-  // ── TIER 1 ──────────────────────────────────────────────────────────────
-  { id:"duolingo", org:"Duolingo", role:"Thrive Program — PM, design, or engineering",
-    tier:1, cats:["edtech","local"], loc:"Pittsburgh, PA", comp:"~$50/hr", dur:"10 weeks",
-    openDate:"2026-08-15", appWin:"Mid-Aug 2026", dl:"~Sept 30, 2026",
+  // ── TIER 1 ──────────────────────────────────────────────────────────────────
+  {
+    id:"duolingo", org:"Duolingo", role:"Thrive Program — PM, design, or engineering",
+    tier:1, cats:["edtech","local"],
+    loc:"Pittsburgh, PA", comp:"~$50/hr", dur:"10 weeks",
+    openDate:"2026-08-15", deadline:"2026-09-30",
+    appWin:"Mid-Aug 2026", dl:"~Sept 30, 2026",
     link:"https://careers.duolingo.com",
-    angle:"CMU is 5 min away. Thrive targets sophomores graduating Spring 2029 — you fit exactly. Apply to PM/Design track AND the APM intern track separately. Product decisions vs. learning outcomes = your systems framing." },
-  { id:"khan", org:"Khan Academy", role:"Content, product, data, or SWE intern",
-    tier:1, cats:["edtech"], loc:"Remote", comp:"$42/hr", dur:"8-12 weeks",
-    openDate:"2026-09-01", appWin:"Sept 2026", dl:"~Oct 31, 2026",
+    angle:"CMU is 5 min away. Thrive targets sophomores graduating Spring 2029 — you fit exactly. Apply to PM/Design track AND the APM intern track separately, which has its own posting. Product decisions vs. learning outcomes = your systems framing.",
+  },
+  {
+    id:"khan", org:"Khan Academy", role:"Content, product, data, or SWE intern",
+    tier:1, cats:["edtech"],
+    loc:"Remote", comp:"$42/hr", dur:"8-12 weeks",
+    openDate:"2026-09-01", deadline:"2026-10-31",
+    appWin:"Sept 2026", dl:"~Oct 31, 2026",
     link:"https://www.khanacademy.org/careers/interns",
-    angle:"Pamoza media + LitCorps literacy = uniquely coherent content track story almost no applicant has. Product/data tracks apply IS skills to nonprofit edtech at scale." },
-  { id:"cif", org:"Coding it Forward", role:"SWE, data, design, or PM — federal agency placement",
-    tier:1, cats:["civic","fellowship"], loc:"Federal agencies (varies)", comp:"$20-25/hr", dur:"10 weeks",
-    openDate:"2026-12-01", appWin:"Dec 2026", dl:"~Jan 19, 2027",
+    angle:"Pamoza media + LitCorps literacy = uniquely coherent content track story almost no applicant has. Product/data tracks apply IS skills to nonprofit edtech at scale.",
+  },
+  {
+    id:"cif", org:"Coding it Forward", role:"SWE, data, design, or PM — federal agency placement",
+    tier:1, cats:["civic","fellowship"],
+    loc:"Federal agencies (varies)", comp:"$20-25/hr", dur:"10 weeks",
+    openDate:"2026-12-01", deadline:"2027-01-19",
+    appWin:"Dec 2026", dl:"~Jan 19, 2027",
     link:"https://codingitforward.com/fellowship",
     angle:"IS + policy = their exact recruit profile. LendingLens/HMDA is direct proof of concept. Systems falling short of their mission is their mandate verbatim.",
-    eligNote:"Class of 2029 graduation may fall outside the 2027 eligibility window. Confirm when applications open Dec 2026 — you may be a stronger candidate for the 2028 cycle (rising senior)." },
-  { id:"tcingc", org:"TCinGC (CMU)", role:"Technology Consulting in the Global Community — international placement",
-    tier:1, cats:["civic","local"], loc:"Global (Rwanda, Palau, SE Asia)", comp:"Airfare + housing + stipend covered", dur:"10 weeks (June-Aug)",
-    openDate:"2027-02-01", appWin:"~Spring 2027", dl:"TBD — check tcingc.org/apply",
+    eligNote:"Class of 2029 graduation may fall outside the 2027 eligibility window (typically caps at Dec 2028). Confirm when applications open Dec 2026 — you may be a stronger candidate for the 2028 cycle (rising senior).",
+  },
+  {
+    id:"tcingc", org:"TCinGC (CMU)", role:"Technology Consulting in the Global Community — international consulting placement",
+    tier:1, cats:["civic","local"],
+    loc:"Global (Rwanda, Palau, SE Asia, developing communities)", comp:"Airfare + housing + living stipend covered", dur:"10 weeks (June-Aug)",
+    openDate:"2027-02-01", deadline:"TBD — check tcingc.org/apply",
+    appWin:"~Spring 2027", dl:"TBD",
     link:"https://www.tcingc.org/apply",
-    angle:"Pamoza International (Malawi nonprofit, video editing instruction, girls education program still running after departure) is the exact profile TCinGC recruits. Travel and housing fully covered." },
-  { id:"build4good", org:"build4good (New America)", role:"Nonprofit tech placement — PM, data, design, or dev",
-    tier:1, cats:["civic","edtech","fellowship"], loc:"Remote (placed with a nonprofit)", comp:"Paid (stipend)", dur:"10-12 weeks",
-    openDate:"2026-12-01", appWin:"Dec 2026", dl:"~Mar 1, 2027",
+    angle:"Pamoza International (Malawi nonprofit, teaching video editing, girls education program, Google Drive system still running after departure) is the exact profile TCinGC recruits. IS consulting skills plus international development experience is about as strong an alignment as any opportunity on this list. Travel and housing fully covered.",
+  },
+  {
+    id:"build4good", org:"build4good (New America)", role:"Nonprofit tech placement — PM, data, design, or dev",
+    tier:1, cats:["civic","edtech","fellowship"],
+    loc:"Remote (placed with a nonprofit)", comp:"Paid (stipend)", dur:"10-12 weeks",
+    openDate:"2026-12-01", deadline:"2027-03-01",
+    appWin:"Dec 2026", dl:"~Mar 1, 2027",
     link:"https://www.build4good.tech",
-    angle:"New America matches tech students to mission-driven nonprofits — PM, data viz, web dev, interactive maps. LiveThe412 is the perfect portfolio piece. Explicitly targets IS and design majors." },
-  // ── TIER 2 ──────────────────────────────────────────────────────────────
-  { id:"spotify", org:"Spotify", role:"Global Summer Intern — product, business, or data",
-    tier:2, cats:["music"], loc:"NYC or Stockholm", comp:"Competitive", dur:"10 weeks",
-    openDate:"2027-01-15", appWin:"~Jan 15, 2027", dl:"~Feb 5, 2027",
+    angle:"New America matches tech students to mission-driven nonprofits — PM, data viz, web dev, interactive maps. LiveThe412 (Leaflet.js, data pipeline, civic analytics) is the perfect portfolio piece for this program. Explicitly targets IS and design majors. Applications for 2027 cohort open December 2026.",
+  },
+  // ── TIER 2 ──────────────────────────────────────────────────────────────────
+  {
+    id:"spotify", org:"Spotify", role:"Global Summer Intern — product, business, or data",
+    tier:2, cats:["music"],
+    loc:"NYC or Stockholm", comp:"Competitive", dur:"10 weeks",
+    openDate:"2027-01-15", deadline:"2027-02-05",
+    appWin:"~Jan 15, 2027", dl:"~Feb 5, 2027",
     link:"https://www.lifeatspotify.com/start-your-journey/students",
     angle:"Ottoman Empire + 700K IG views = authentic music tech story almost no other candidate has. Apply to product or business track, not SWE.",
-    eligNote:"Spotify typically wants graduation 2027 or 2028. Class of 2029 may be one year early — still worth applying; strong candidate for summer 2028 regardless." },
-  { id:"c1", org:"Capital One", role:"Product Summit (2-day) + Product Early Internship pipeline",
-    tier:2, cats:["fintech"], loc:"Various", comp:"Summit: free · Internship: competitive", dur:"Summit: 2 days · Internship: 10-12 wks",
-    openDate:"2026-06-01", appWin:"Rolling — email now", dl:"Rolling",
+    eligNote:"Spotify requires graduating or penultimate year. For summer 2027 they will likely want graduation 2027 or 2028. As Class of 2029 you may be one year early — strong candidate for summer 2028 instead. Still worth applying and seeing.",
+  },
+  {
+    id:"c1", org:"Capital One", role:"Product Summit (2-day) + Product Early Internship pipeline",
+    tier:2, cats:["fintech"],
+    loc:"Various", comp:"Summit: free · Internship: competitive", dur:"Summit: 2 days · Internship: 10-12 wks",
+    openDate:"2026-06-01", deadline:"Rolling",
+    appWin:"Rolling — email now", dl:"Rolling",
     link:"https://www.capitalonecareers.com/get-ahead-with-early-career-programs-for-students",
-    angle:"LendingLens + HMDA equity work = financial inclusion angle. IS is an explicitly listed qualifying major. Email ProductEE@capitalone.com and AnalystEE@capitalone.com.",
-    urgent:true },
-  { id:"gpf", org:"Google", role:"Public Policy Fellowship — placed at policy/advocacy org",
-    tier:2, cats:["civic","fellowship"], loc:"Various US markets", comp:"Stipend", dur:"Semester",
-    openDate:"2026-12-15", appWin:"Dec 2026 - Jan 2027", dl:"~Feb 2027",
+    angle:"LendingLens + HMDA equity work = financial inclusion angle. IS is an explicitly listed qualifying major for Product Summit. Email ProductEE@capitalone.com. Also apply to Analyst Summit (AnalystEE@capitalone.com).",
+    urgent: true,
+  },
+  {
+    id:"gpf", org:"Google", role:"Public Policy Fellowship — placed at policy/advocacy org",
+    tier:2, cats:["civic","fellowship"],
+    loc:"Various US markets", comp:"Stipend", dur:"Semester",
+    openDate:"2026-12-15", deadline:"2027-02-01",
+    appWin:"Dec 2026 - Jan 2027", dl:"~Feb 2027",
     link:"https://www.google.com/policyfellowship/",
-    angle:"LendingLens + game theory/policy coursework = genuine policy foundation, not tech interest bolted on. Internet/tech policy is natural IS and P&M territory." },
-  { id:"siegel", org:"Princeton CITP", role:"Siegel PIT Summer Fellowship",
-    tier:2, cats:["civic","fellowship"], loc:"Gov/nonprofit placement (varies)", comp:"Paid stipend", dur:"8-10 weeks",
-    openDate:"2027-02-01", appWin:"Feb 2027", dl:"~Mar 15, 2027",
+    angle:"LendingLens + game theory/policy coursework = genuine policy foundation, not tech interest bolted on. Internet/tech policy is natural IS and P&M territory.",
+  },
+  {
+    id:"siegel", org:"Princeton CITP", role:"Siegel PIT Summer Fellowship",
+    tier:2, cats:["civic","fellowship"],
+    loc:"Gov/nonprofit placement (varies)", comp:"Paid stipend", dur:"8-10 weeks",
+    openDate:"2027-02-01", deadline:"2027-03-15",
+    appWin:"Feb 2027", dl:"~Mar 15, 2027",
     link:"https://citp.princeton.edu",
-    angle:"IS + Policy and Management double-track = near-perfect match. Sociotechnical coursework + security economics/game theory = strong policy credentials for non-Princeton applicants." },
-  { id:"mip", org:"City of Philadelphia", role:"Mayor's Internship Program — tech or community dev",
-    tier:2, cats:["civic","local"], loc:"Philadelphia, PA", comp:"Paid", dur:"10 weeks",
-    openDate:"2027-02-01", appWin:"Feb 2027", dl:"~Mar 1, 2027",
+    angle:"IS + Policy and Management double-track = near-perfect match. Sociotechnical coursework + security economics/game theory = strong policy credentials for non-Princeton applicants.",
+  },
+  {
+    id:"mip", org:"City of Philadelphia", role:"Mayor's Internship Program — tech or community dev",
+    tier:2, cats:["civic","local"],
+    loc:"Philadelphia, PA", comp:"Paid", dur:"10 weeks",
+    openDate:"2027-02-01", deadline:"2027-03-01",
+    appWin:"Feb 2027", dl:"~Mar 1, 2027",
     link:"https://www.phila.gov/programs/mayors-internship-program/",
-    angle:"LendingLens fits housing/community dev offices. Philly community roots (Aceing Autism, MCG Youth). Capstone presentation to city leaders is a networking asset." },
-  { id:"deloitte", org:"Deloitte", role:"Discovery Internship → Business Technology Analyst Intern",
-    tier:2, cats:["consulting"], loc:"Various US offices", comp:"Competitive", dur:"Discovery: multi-day · Internship: 8-10 wks",
-    openDate:"2026-08-01", appWin:"Aug 2026", dl:"Rolling, early fall",
+    angle:"LendingLens fits housing/community dev offices. Philly community roots (Aceing Autism, MCG Youth). Capstone presentation to city leaders is a networking asset.",
+  },
+  {
+    id:"deloitte", org:"Deloitte", role:"Discovery Internship → Business Technology Analyst Intern",
+    tier:2, cats:["consulting"],
+    loc:"Various US offices", comp:"Competitive", dur:"Discovery: multi-day · Internship: 8-10 wks",
+    openDate:"2026-08-01", deadline:"2026-10-31",
+    appWin:"Aug 2026", dl:"Rolling, early fall",
     link:"https://www.deloitte.com/us/en/careers/internships.html",
-    angle:"Confirmed CMU IS sophomore track (BTA + Strategy roles, summer 2025). Apply to Discovery first — it's a direct pipeline to the full internship." },
-  { id:"ps", org:"PublicSource", role:"Audience engagement and analytics intern",
-    tier:2, cats:["civic","local"], loc:"Pittsburgh, PA", comp:"Varies", dur:"Summer",
-    openDate:"2027-02-01", appWin:"Feb 2027", dl:"~Mar 2027",
+    angle:"Confirmed CMU IS sophomore track (BTA + Strategy roles, summer 2025). IS + P&M = Business Technology Analyst natural fit. Apply to Discovery first — it is a direct pipeline to the full internship.",
+  },
+  {
+    id:"ps", org:"PublicSource", role:"Audience engagement and analytics intern",
+    tier:2, cats:["civic","local"],
+    loc:"Pittsburgh, PA", comp:"Varies", dur:"Summer",
+    openDate:"2027-02-01", deadline:"2027-03-01",
+    appWin:"Feb 2027", dl:"~Mar 2027",
     link:"https://publicsource.org/jobs",
-    angle:"Pittsburgh nonprofit civic journalism. Analytics + audience engagement = IS skills in direct service of civic mission. CMU IS student held this exact role in summer 2025." },
-  { id:"czi", org:"Chan Zuckerberg Initiative", role:"Summer intern — product, data, or SWE",
-    tier:2, cats:["edtech"], loc:"Redwood City, CA (in-person or hybrid)", comp:"$56/hr (BS)", dur:"10-12 weeks",
-    openDate:"2026-10-01", appWin:"Oct–Nov 2026", dl:"Rolling fall 2026",
+    angle:"Pittsburgh nonprofit civic journalism. Analytics + audience engagement = IS skills in direct service of civic mission. CMU IS student held this exact role in summer 2025.",
+  },
+  {
+    id:"czi", org:"Chan Zuckerberg Initiative", role:"Summer intern — product, data, or SWE",
+    tier:2, cats:["edtech"],
+    loc:"Redwood City, CA (in-person or hybrid)", comp:"$56/hr (BS)", dur:"10-12 weeks",
+    openDate:"2026-10-01", deadline:"2026-11-30",
+    appWin:"Oct–Nov 2026", dl:"Rolling fall 2026",
     link:"https://chanzuckerberg.com/careers/internship-program/",
-    angle:"CZI's philanthropy explicitly focuses on education alongside disease and community needs. SWE is dominant but product/data roles exist. LitCorps + Pamoza = credible education impact story." },
-  { id:"panorama", org:"Panorama Education", role:"Research, data, or product role (direct outreach)",
-    tier:2, cats:["edtech"], loc:"Remote", comp:"TBD", dur:"Summer",
-    openDate:null, appWin:"Outreach: winter 2026", dl:"No formal deadline",
+    angle:"Priscilla Chan and Mark Zuckerberg's philanthropy explicitly focuses on eradicating disease, improving education, and addressing community needs — the education track is a direct hit. Intern program is structured with mentorship, a developmental series, and project work tied to the mission. SWE is the dominant track but product/data roles exist. LitCorps + Pamoza = credible education impact story.",
+  },
+  {
+    id:"panorama", org:"Panorama Education", role:"Research, data, or product role (direct outreach)",
+    tier:2, cats:["edtech"],
+    loc:"Remote", comp:"TBD", dur:"Summer",
+    openDate:null, deadline:"No formal deadline",
+    appWin:"Outreach: winter 2026", dl:"No formal deadline",
     link:"https://www.panoramaed.com/about/careers",
-    angle:"Builds K-12 data analytics tools for 2,000+ districts, 15M students. IS + data skills directly applicable; LitCorps is the right mission-level frame.",
-    urgent:true },
-  { id:"msexplore", org:"Microsoft Explore Program", role:"Rotational intern — PM, SWE, and design in one summer",
-    tier:2, cats:["local","fellowship"], loc:"Redmond, WA (in-person)", comp:"Competitive", dur:"Summer, 3 rotations",
-    openDate:"2026-08-01", appWin:"Aug 2026", dl:"Rolling, ~mid-Oct 2026",
+    angle:"Builds K-12 data analytics tools that help districts understand whether their programs actually work — MTSS tracking, student outcomes, family engagement surveys. 2,000+ school districts, 15M students. IS + data skills are directly applicable; LitCorps (measuring actual student growth) is the right mission-level frame for applications.",
+    urgent: true,
+  },
+  {
+    id:"msexplore", org:"Microsoft Explore Program", role:"Rotational intern — PM, SWE, and design in one summer",
+    tier:2, cats:["local","fellowship"],
+    loc:"Redmond, WA (in-person)", comp:"Competitive", dur:"Summer, 3 rotations",
+    openDate:"2026-08-01", deadline:"2026-10-15",
+    appWin:"Aug 2026", dl:"Rolling, ~mid-Oct 2026",
     link:"https://careers.microsoft.com/v2/global/en/universityinternship",
-    angle:"Eligibility is 1st/2nd-year status the term before the internship — you'll be a sophomore in spring 2027, so you fit exactly. Three rotations (PM, SWE, design) in one summer is unusually broad exposure.",
-    eligNote:"Officially aimed at CS/engineering majors with intro CS + one semester of calculus. IS has real technical rigor (Flask/SQL, formal logic, R) — defensible stretch, especially for PM/design rotations." },
-  // ── TIER 3 ──────────────────────────────────────────────────────────────
-  { id:"cl", org:"Carnegie Learning", role:"Research or product role (direct outreach)",
-    tier:3, cats:["edtech","local"], loc:"Pittsburgh, PA", comp:"TBD", dur:"Summer",
-    openDate:null, appWin:"Outreach now", dl:"No formal deadline",
+    angle:"Eligibility is 1st/2nd-year status during the term immediately before the internship — you'll be a sophomore in spring 2027, so you fit exactly. Three short rotations across PM, SWE, and design in a single summer is unusually broad exposure for a company this size, and it's explicitly built to support students from underrepresented groups in tech.",
+    eligNote:"Officially aimed at CS/engineering majors with intro CS + one semester of calculus completed. IS at CMU has real technical rigor (Flask/SQL work, formal logic, R), so this is a defensible stretch, especially for the PM or design rotation — but go in aware the SWE rotation skews more CS-native.",
+  },
+  {
+    id:"friedmantrek", org:"CMU Friedman Trek (CMIST)", role:"5-day DC career exploration trek — not an internship, but fully funded",
+    tier:2, cats:["civic","local"],
+    loc:"Washington, DC", comp:"Fully funded (travel, hotel, activities)", dur:"5 days (Mar 8-12, 2027)",
+    openDate:"2026-08-19", deadline:"2026-11-01",
+    appWin:"Aug 19, 2026", dl:"Nov 1, 2026",
+    link:"https://www.cmu.edu/cmist/washington-center/friedman-trek/index.html",
+    angle:"Not a job — a fully funded 5-day DC trip built specifically for first-years and sophomores to meet CMU alumni across government, policy, and nonprofits. Directly seeds the network you'd want for Coding it Forward, the Google Policy Fellowship, or a Friedman-funded Hill internship. Zero cost, low effort relative to payoff.",
+  },
+  {
+    id:"friedmanfellowship", org:"CMIST Friedman Fellowship", role:"Funding for an unpaid/low-paid DC policy internship — $5,000 stipend + free Metro pass",
+    tier:2, cats:["civic","fellowship","local"],
+    loc:"Washington, DC (you source the internship)", comp:"$5,000 stipend + UPASS", dur:"8-12 weeks",
+    openDate:"2026-11-01", deadline:"2027-02-01",
+    appWin:"~Nov 2026 - Jan 2027", dl:"~Feb 2027 (based on 2026 cycle)",
+    link:"https://www.cmu.edu/cmist/washington-center/summer-internship-support/index.html",
+    angle:"This is what makes an otherwise-unpaid federal or nonprofit DC internship financially viable. Pair it with something like the Google Public Policy Fellowship or a direct Hill/agency application — CMIST staff helps you find and apply. Open to any CMU undergrad, no major restriction.",
+    eligNote:"The parallel Gow Political Internship Fund requires Western Pennsylvania residency, which likely rules it out for you. Friedman Fellowship has no such geographic restriction — that's the one to pursue.",
+  },
+  {
+    id:"aspen", org:"Aspen Institute", role:"Summer Internship Program — policy, communications, or program support",
+    tier:2, cats:["civic","fellowship"],
+    loc:"Washington, DC / New York, NY / Aspen, CO", comp:"Paid", dur:"10-12 weeks",
+    openDate:"2027-01-15", deadline:"2027-03-01",
+    appWin:"~Jan 2027", dl:"Rolling by department",
+    link:"https://www.aspeninstitute.org/about/careers/",
+    angle:"Real, paid policy internships across dozens of programs — the Congressional Program specifically places interns on bipartisan policy work in the Capitol. Broad enough that IS + P&M fits multiple tracks without needing a poli-sci pedigree.",
+  },
+  // ── TIER 3 ──────────────────────────────────────────────────────────────────
+  {
+    id:"cl", org:"Carnegie Learning", role:"Research or product role (direct outreach)",
+    tier:3, cats:["edtech","local"],
+    loc:"Pittsburgh, PA", comp:"TBD", dur:"Summer",
+    openDate:null, deadline:"No formal deadline",
+    appWin:"Outreach now", dl:"No formal deadline",
     link:"https://www.carnegielearning.com/careers/",
     angle:"CMU institutional connection opens doors. Adaptive learning gap (students not progressing despite platform use) = your kind of systems problem.",
-    urgent:true },
-  { id:"pfed", org:"Federal Reserve Bank of Philadelphia", role:"Community development or technology intern",
-    tier:3, cats:["civic","local"], loc:"Philadelphia, PA", comp:"Paid", dur:"Summer",
-    openDate:"2027-01-15", appWin:"Jan 2027", dl:"~Mar 2027",
+    urgent: true,
+  },
+  {
+    id:"pfed", org:"Federal Reserve Bank of Philadelphia", role:"Community development or technology intern",
+    tier:3, cats:["civic","local"],
+    loc:"Philadelphia, PA", comp:"Paid", dur:"Summer",
+    openDate:"2027-01-15", deadline:"2027-03-01",
+    appWin:"Jan 2027", dl:"~Mar 2027",
     link:"https://www.philadelphiafed.org/careers/internships",
-    angle:"LendingLens/HMDA equity analysis is exactly what their community dev team does. Uncommon background for a typical intern applicant." },
-  { id:"newsela", org:"Newsela", role:"Impact Research Intern",
-    tier:3, cats:["edtech"], loc:"Remote", comp:"$35/hr", dur:"8-12 weeks",
-    openDate:"2027-03-01", appWin:"Mar 2027", dl:"~Apr 2027",
+    angle:"LendingLens/HMDA equity analysis is exactly what their community dev team does. Uncommon background for a typical intern applicant.",
+  },
+  {
+    id:"newsela", org:"Newsela", role:"Impact Research Intern",
+    tier:3, cats:["edtech"],
+    loc:"Remote", comp:"$35/hr", dur:"8-12 weeks",
+    openDate:"2027-03-01", deadline:"2027-04-01",
+    appWin:"Mar 2027", dl:"~Apr 2027",
     link:"https://newsela.com/about/careers/",
-    angle:"Graduate-skewing — flag as junior-year target. Needs strong R/tidyverse. LitCorps background is mission-relevant." },
-  { id:"ets", org:"ETS", role:"Research, data, or technology roles (direct outreach)",
-    tier:3, cats:["edtech","local"], loc:"Princeton, NJ", comp:"TBD", dur:"Summer",
-    openDate:null, appWin:"Outreach: winter 2026", dl:"Varies",
+    angle:"Graduate-skewing — flag as junior-year target. Needs strong R/tidyverse. LitCorps background is mission-relevant.",
+  },
+  {
+    id:"ets", org:"ETS", role:"Research, data, or technology roles (direct outreach)",
+    tier:3, cats:["edtech","local"],
+    loc:"Princeton, NJ", comp:"TBD", dur:"Summer",
+    openDate:null, deadline:"No formal deadline",
+    appWin:"Outreach: winter 2026", dl:"Varies",
     link:"https://www.ets.org/about/jobs.html",
     angle:"Near home (Wallingford). LitCorps measurable literacy outcomes = assessment validity angle. Direct outreach to research/tech teams, not the general jobs portal.",
-    urgent:true },
-  { id:"upworthy", org:"Upworthy", role:"Outreach via Amanda Farrand (CEO relationship)",
-    tier:3, cats:["civic"], loc:"Remote/NYC", comp:"TBD", dur:"TBD",
-    openDate:null, appWin:"Outreach: fall 2026", dl:"No formal deadline",
+    urgent: true,
+  },
+  {
+    id:"upworthy", org:"Upworthy", role:"Outreach via Amanda Farrand (CEO relationship)",
+    tier:3, cats:["civic"],
+    loc:"Remote/NYC", comp:"TBD", dur:"TBD",
+    openDate:null, deadline:"No formal deadline",
+    appWin:"Outreach: fall 2026", dl:"No formal deadline",
     link:"https://www.upworthy.com",
     angle:"Direct CEO relationship already built. Pamoza + Ottoman Empire narrative already developed for this audience. Simple ask about summer opportunities.",
-    urgent:true },
-  { id:"comcast", org:"Comcast / NBCUniversal", role:"Early career — tech, media, or business dev",
-    tier:3, cats:["media","local"], loc:"Philadelphia, PA", comp:"Competitive", dur:"Summer",
-    openDate:"2026-08-01", appWin:"Aug 2026", dl:"Rolling fall 2026",
+    urgent: true,
+  },
+  {
+    id:"comcast", org:"Comcast / NBCUniversal", role:"Early career — tech, media, or business dev",
+    tier:3, cats:["media","local"],
+    loc:"Philadelphia, PA", comp:"Competitive", dur:"Summer",
+    openDate:"2026-08-01", deadline:"2026-11-01",
+    appWin:"Aug 2026", dl:"Rolling fall 2026",
     link:"https://jobs.comcast.com/early-career",
-    angle:"Philadelphia HQ = local angle. NBCUniversal media connection relevant to music/media background. Confirmed CMU IS sophomore track (2025)." },
-  { id:"mckinsey", org:"McKinsey and Company", role:"Diversity summits then Business Analyst internship",
-    tier:3, cats:["consulting"], loc:"Various", comp:"Competitive", dur:"Summit: 2 days · Internship: 10 wks",
-    openDate:"2026-08-01", appWin:"Aug 2026 (summits rolling)", dl:"~Oct 2026 for internship",
+    angle:"Philadelphia HQ = local angle. NBCUniversal media connection relevant to music/media background. Confirmed CMU IS sophomore track (2025).",
+  },
+  {
+    id:"mckinsey", org:"McKinsey and Company", role:"Diversity summits then Business Analyst internship",
+    tier:3, cats:["consulting"],
+    loc:"Various", comp:"Competitive", dur:"Summit: 2 days · Internship: 10 wks",
+    openDate:"2026-08-01", deadline:"2026-10-01",
+    appWin:"Aug 2026 (summits rolling)", dl:"~Oct 2026 for internship",
     link:"https://www.mckinsey.com/careers/students/undergraduate-degree",
-    angle:"Stretch. Enter through diversity summits first. Analytical rigor from game theory + IS coursework is relevant." },
-  { id:"accenture", org:"Accenture", role:"Technology or strategy consulting intern",
-    tier:3, cats:["consulting","local"], loc:"Various (Philly-area offices)", comp:"Competitive", dur:"10-12 weeks",
-    openDate:"2026-08-01", appWin:"Aug 2026", dl:"Rolling fall 2026",
+    angle:"Stretch. Enter through diversity summits first. Analytical rigor from game theory + IS coursework is relevant.",
+  },
+  {
+    id:"accenture", org:"Accenture", role:"Technology or strategy consulting intern",
+    tier:3, cats:["consulting","local"],
+    loc:"Various (Philly-area offices)", comp:"Competitive", dur:"10-12 weeks",
+    openDate:"2026-08-01", deadline:"2026-11-01",
+    appWin:"Aug 2026", dl:"Rolling fall 2026",
     link:"https://www.accenture.com/us-en/careers/life-at-accenture/internships-students",
-    angle:"Confirmed CMU IS sophomore track (2025). Philly offices. More accessible than McKinsey." },
-  { id:"pwc", org:"PwC", role:"Technology Consulting Intern",
-    tier:3, cats:["consulting"], loc:"Various (DC, Philly area)", comp:"Competitive", dur:"10 weeks",
-    openDate:"2026-08-01", appWin:"Aug 2026", dl:"Rolling fall 2026",
+    angle:"Confirmed CMU IS sophomore track (2025). Philly offices. IS background fits technology consulting. More accessible than McKinsey.",
+  },
+  {
+    id:"pwc", org:"PwC", role:"Technology Consulting Intern",
+    tier:3, cats:["consulting"],
+    loc:"Various (DC, Philly area)", comp:"Competitive", dur:"10 weeks",
+    openDate:"2026-08-01", deadline:"2026-11-01",
+    appWin:"Aug 2026", dl:"Rolling fall 2026",
     link:"https://www.pwc.com/us/en/careers/campus.html",
-    angle:"Confirmed CMU IS sophomore track (2025). DC office connects to civic/policy interest." },
-  { id:"ey", org:"EY", role:"Technology Consulting Intern",
-    tier:3, cats:["consulting"], loc:"Various", comp:"Competitive", dur:"10 weeks",
-    openDate:"2026-08-01", appWin:"Aug 2026", dl:"Rolling fall 2026",
+    angle:"Confirmed CMU IS sophomore track (2025). DC office connects to civic/policy interest. Technology consulting = IS + P&M native territory.",
+  },
+  {
+    id:"ey", org:"EY", role:"Technology Consulting Intern",
+    tier:3, cats:["consulting"],
+    loc:"Various", comp:"Competitive", dur:"10 weeks",
+    openDate:"2026-08-01", deadline:"2026-11-01",
+    appWin:"Aug 2026", dl:"Rolling fall 2026",
     link:"https://www.ey.com/en_us/careers/students",
-    angle:"Confirmed CMU IS sophomore track (2025). Technology consulting directly relevant to IS." },
-  { id:"kpmg", org:"KPMG", role:"Federal Technology Enablement or Tech Consulting Intern",
-    tier:3, cats:["consulting","civic"], loc:"Various (DC/Tyson, VA area)", comp:"Competitive", dur:"10 weeks",
-    openDate:"2026-08-01", appWin:"Aug 2026", dl:"Rolling fall 2026",
+    angle:"Confirmed CMU IS sophomore track (2025). Technology consulting directly relevant to IS.",
+  },
+  {
+    id:"kpmg", org:"KPMG", role:"Federal Technology Enablement or Tech Consulting Intern",
+    tier:3, cats:["consulting","civic"],
+    loc:"Various (DC/Tyson, VA area)", comp:"Competitive", dur:"10 weeks",
+    openDate:"2026-08-01", deadline:"2026-11-01",
+    appWin:"Aug 2026", dl:"Rolling fall 2026",
     link:"https://home.kpmg/us/en/home/careers/students-and-graduates.html",
-    angle:"Confirmed CMU IS sophomore track (2025). Federal Technology Enablement track bridges consulting + civic/gov interests." },
-  { id:"workiva", org:"Workiva", role:"Product Management Intern",
-    tier:3, cats:["tech"], loc:"Ames, Iowa (remote possible)", comp:"Competitive", dur:"10-12 weeks",
-    openDate:"2026-09-01", appWin:"Sept 2026", dl:"Rolling fall 2026",
+    angle:"Confirmed CMU IS sophomore track (2025). Federal Technology Enablement track uniquely bridges consulting + civic/gov interests.",
+  },
+  {
+    id:"workiva", org:"Workiva", role:"Product Management Intern",
+    tier:3, cats:["tech"],
+    loc:"Ames, Iowa (remote possible)", comp:"Competitive", dur:"10-12 weeks",
+    openDate:"2026-09-01", deadline:"2026-11-01",
+    appWin:"Sept 2026", dl:"Rolling fall 2026",
     link:"https://www.workiva.com/careers",
-    angle:"Confirmed CMU IS sophomore PM role (2025). PM role is the important differentiator here." },
-  { id:"ixl", org:"IXL Learning", role:"Product, data, or SWE intern (cold outreach target)",
-    tier:3, cats:["edtech"], loc:"San Mateo, CA or Raleigh, NC", comp:"Competitive", dur:"10-12 weeks",
-    openDate:"2026-09-01", appWin:"Sept–Oct 2026", dl:"Rolling fall 2026",
+    angle:"Confirmed CMU IS sophomore PM role (2025). Cloud/software company; IS skills directly applicable. PM role is the important differentiator here.",
+  },
+  {
+    id:"ixl", org:"IXL Learning", role:"Product, data, or SWE intern (cold outreach target)",
+    tier:3, cats:["edtech"],
+    loc:"San Mateo, CA or Raleigh, NC", comp:"Competitive", dur:"10-12 weeks",
+    openDate:"2026-09-01", deadline:"2026-11-30",
+    appWin:"Sept–Oct 2026", dl:"Rolling fall 2026",
     link:"https://www.ixl.com/company/jobs",
-    angle:"Already on your cold outreach list. Personalized learning platform for 15M+ K-12 students. Look for a PM or data analyst posting alongside the SWE roles." },
-  { id:"amex", org:"American Express", role:"Analytics, product, or sophomore finance intern",
-    tier:3, cats:["fintech"], loc:"Various (NYC, Phoenix)", comp:"Competitive", dur:"10 weeks",
-    openDate:"2026-08-01", appWin:"Aug 2026", dl:"~Sept 30, 2026",
+    angle:"Already on your cold outreach list. Personalized learning platform used by 15M+ students across K-12. IS + edtech framing is clean. SWE internships are the most visible track; look for a PM or data analyst posting alongside them. The Pamoza and LitCorps stories are the angle — connect them to learning personalization.",
+  },
+  {
+    id:"amex", org:"American Express", role:"Analytics, product, or sophomore finance intern",
+    tier:3, cats:["fintech"],
+    loc:"Various (NYC, Phoenix)", comp:"Competitive", dur:"10 weeks",
+    openDate:"2026-08-01", deadline:"2026-09-30",
+    appWin:"Aug 2026", dl:"~Sept 30, 2026",
     link:"https://www.americanexpress.com/en-us/careers/student-programs/us/",
-    angle:"Dedicated sophomore finance internship track plus broader analytics/product tracks. Useful breadth play. Opens August — set a reminder." },
+    angle:"Has a dedicated sophomore finance internship track (graduating 2028 or later) plus broader analytics and product tracks. Useful breadth play alongside the consulting firms. IS is a qualifying major. Opens August — set a calendar reminder.",
+  },
+  {
+    id:"amphil", org:"AmPhil", role:"Development Intern — nonprofit fundraising & operations support",
+    tier:3, cats:["civic"],
+    loc:"Various (multiple US offices)", comp:"Paid", dur:"Summer",
+    openDate:"2026-09-01", deadline:"Rolling",
+    appWin:"Fall 2026", dl:"Rolling",
+    link:"https://amphil.com/careers/intern/",
+    angle:"You already built cover letters for this one — reuse that groundwork if you want another shot. Worth being honest with yourself first: is the fundraising/ops work itself interesting, or was it mainly attractive as a fallback? The role is general nonprofit administration, not especially IS or tech-forward.",
+  },
+  {
+    id:"koch", org:"Koch Internship Program (Stand Together)", role:"Paid 12-week placement at one of 80+ partner nonprofits/think tanks",
+    tier:3, cats:["civic","fellowship"],
+    loc:"Various (in-person, remote, and hybrid roles)", comp:"Paid", dur:"12 weeks",
+    openDate:null, deadline:"Rolling",
+    appWin:"Rolling — opens ahead of each cycle", dl:"Rolling",
+    link:"https://standtogetherfellowships.org/koch-internship-program/",
+    angle:"Placements span policy research, communications, and program management at real nonprofits — content-wise adjacent to your civic-policy interest.",
+    eligNote:"This program is explicitly built around classical liberal principles — individual liberty, limited government, free markets — and includes coursework in that philosophy alongside the placement. That's a different starting point than the mission-driven/civic-tech framing behind most of your other picks. Not a reason to skip it by default, but worth being clear-eyed about before applying.",
+    urgent: true,
+  },
 ];
 
 const WATCHLIST = [
-  { id:"googleapm", org:"Google", role:"Associate Product Manager (APM) Internship",
-    why:"Requires entering your penultimate year of study — junior year, meaning summer 2028 for you, not 2027. One of the most selective PM programs in tech, worth prepping for ahead of time.",
-    link:"https://buildyourfuture.withgoogle.com/programs/apm-intern" },
-  { id:"amazonrotation", org:"Amazon", role:"Rotational programs (Operations Finance, Business, etc.)",
-    why:"Standard rotational internships require graduating between Dec 2027 and June 2028 — rising seniors. Amazon Propel exists for underclassmen but is SDE/CS-track specific, a weaker fit for IS than Microsoft Explore.",
-    link:"https://www.amazon.jobs/en/business_categories/university-recruiting" },
+  {
+    id:"googleapm", org:"Google", role:"Associate Product Manager (APM) Internship",
+    why:"Requires entering your penultimate year of study — that's junior year, which means summer 2028 for you, not 2027. One of the most selective PM programs in tech, so it's worth prepping for well ahead of time.",
+    link:"https://buildyourfuture.withgoogle.com/programs/apm-intern",
+  },
+  {
+    id:"amazonrotation", org:"Amazon", role:"Rotational programs (Operations Finance, Business, etc.)",
+    why:"Standard rotational internships require graduating between Dec 2027 and June 2028 — rising seniors. Amazon Propel exists for underclassmen but is SDE/CS-track specific, which is a weaker fit for IS than Microsoft Explore's broader rotation structure.",
+    link:"https://www.amazon.jobs/en/business_categories/university-recruiting",
+  },
 ];
 
 const CATS = [
-  { id:"all", label:"All" },
-  { id:"actnow", label:"Act now" },
-  { id:"edtech", label:"Edtech" },
-  { id:"civic", label:"Civic & policy" },
-  { id:"consulting", label:"Consulting" },
-  { id:"local", label:"Pittsburgh / Philly" },
-  { id:"fellowship", label:"Fellowship" },
-  { id:"custom", label:"My additions" },
+  { id:"all",       label:"All" },
+  { id:"actnow",    label:"Act now" },
+  { id:"edtech",    label:"Edtech" },
+  { id:"civic",     label:"Civic & policy" },
+  { id:"consulting",label:"Consulting" },
+  { id:"local",     label:"Pittsburgh / Philly" },
+  { id:"fellowship",label:"Fellowship" },
 ];
 
 const STATUSES = ["Not started","Researching","In progress","Applied","Waiting","Offer","Accepted","Rejected"];
 
 const SS = {
-  "Not started": { bg:"#F1EFE8", fg:"#5F5E5A" },
+  "Not started":{ bg:"#F1EFE8", fg:"#5F5E5A" },
   "Researching": { bg:"#E6F1FB", fg:"#0C447C" },
   "In progress": { bg:"#FAEEDA", fg:"#633806" },
   "Applied":     { bg:"#EEEDFE", fg:"#534AB7" },
@@ -238,389 +364,222 @@ const TC = { 1:"#1D9E75", 2:"#185FA5", 3:"#BA7517" };
 const TL = { 1:"Tier 1 — mission-aligned", 2:"Tier 2 — strong fit", 3:"Tier 3 — worth watching" };
 
 const CB = {
-  edtech:     { bg:"#E6F1FB", fg:"#0C447C", label:"Edtech" },
-  civic:      { bg:"#E1F5EE", fg:"#085041", label:"Civic" },
-  fellowship: { bg:"#EEEDFE", fg:"#3C3489", label:"Fellowship" },
-  local:      { bg:"#FAECE7", fg:"#712B13", label:"Pgh/Philly" },
-  consulting: { bg:"#FAEEDA", fg:"#633806", label:"Consulting" },
-  music:      { bg:"#FBEAF0", fg:"#4B1528", label:"Music/Tech" },
-  fintech:    { bg:"#EAF3DE", fg:"#173404", label:"Fintech" },
-  media:      { bg:"#FEF3C7", fg:"#78350F", label:"Media" },
-  tech:       { bg:"#F1EFE8", fg:"#444441", label:"Tech" },
-  custom:     { bg:"#F3E8FF", fg:"#5B21B6", label:"My addition" },
+  edtech:    { bg:"#E6F1FB", fg:"#0C447C", label:"Edtech" },
+  civic:     { bg:"#E1F5EE", fg:"#085041", label:"Civic" },
+  fellowship:{ bg:"#EEEDFE", fg:"#3C3489", label:"Fellowship" },
+  local:     { bg:"#FAECE7", fg:"#712B13", label:"Pgh/Philly" },
+  consulting:{ bg:"#FAEEDA", fg:"#633806", label:"Consulting" },
+  music:     { bg:"#FBEAF0", fg:"#4B1528", label:"Music/Tech" },
+  fintech:   { bg:"#EAF3DE", fg:"#173404", label:"Fintech" },
+  media:     { bg:"#FEF3C7", fg:"#78350F", label:"Media" },
+  tech:      { bg:"#F1EFE8", fg:"#444441", label:"Tech" },
 };
 
-/* ---------- date helpers ---------- */
 function daysUntil(d) {
   if (!d) return null;
   const t = new Date(); t.setHours(0,0,0,0);
   return Math.ceil((new Date(d) - t) / 86400000);
 }
+
 function countdownBadge(o) {
   if (o.urgent && !o.openDate) return { label:"outreach now", bg:"#FAEEDA", fg:"#633806" };
   const d = daysUntil(o.openDate);
-  if (d === null) return { label: o.appWin || "—", bg:"#F1EFE8", fg:"#6b6b67" };
-  if (d <= 0)  return { label:"open now", bg:"#E1F5EE", fg:"#085041" };
-  if (d <= 14) return { label:`${d}d`, bg:"#FCEBEB", fg:"#A32D2D" };
-  if (d <= 45) return { label:`${d}d`, bg:"#FAEEDA", fg:"#633806" };
-  if (d <= 90) return { label:`${d}d`, bg:"#E6F1FB", fg:"#0C447C" };
-  return { label:`~${Math.round(d/30.5)}mo`, bg:"#F1EFE8", fg:"#8c8c88" };
+  if (d === null)  return { label:o.appWin,     bg:"#F1EFE8", fg:"#6b6b67" };
+  if (d <= 0)      return { label:"open now",   bg:"#E1F5EE", fg:"#085041" };
+  if (d <= 14)     return { label:`${d}d`,       bg:"#FCEBEB", fg:"#A32D2D" };
+  if (d <= 45)     return { label:`${d}d`,       bg:"#FAEEDA", fg:"#633806" };
+  if (d <= 90)     return { label:`${d}d`,       bg:"#E6F1FB", fg:"#0C447C" };
+  return { label:`~${Math.round(d/30.5)}mo`,     bg:"#F1EFE8", fg:"#8c8c88" };
 }
+
 function isActNow(o) {
   if (o.urgent) return true;
   const d = daysUntil(o.openDate);
   return d !== null && d <= 90;
 }
 
-/* ---------- localStorage persistence (works standalone / on GitHub Pages, per-browser) ---------- */
-const STORAGE_KEY = "intern-tracker-data-v1";
-function loadData() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { statuses:{}, notes:{}, customOpps:[] };
-    const d = JSON.parse(raw);
-    return { statuses:d.statuses||{}, notes:d.notes||{}, customOpps:d.customOpps||[] };
-  } catch (e) { return { statuses:{}, notes:{}, customOpps:[] }; }
-}
-function saveData(data) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); return true; }
-  catch (e) { return false; }
-}
-
-const ALL_CAT_OPTIONS = ["edtech","civic","consulting","local","fellowship","fintech","music","media","tech"];
-
-/* ---------- Add Opportunity form ---------- */
-function AddForm({ onAdd, onCancel }) {
-  const [f, setF] = useState({
-    org:"", role:"", tier:2, cats:[], loc:"", comp:"", dur:"",
-    openDate:"", appWin:"", dl:"", link:"", angle:"", urgent:false,
-  });
-  const set = (k, v) => setF(prev => ({ ...prev, [k]: v }));
-  const toggleCat = (c) => setF(prev => ({
-    ...prev,
-    cats: prev.cats.includes(c) ? prev.cats.filter(x => x !== c) : [...prev.cats, c],
-  }));
-
-  const submit = () => {
-    if (!f.org.trim() || !f.role.trim()) { alert("Organization and role are required."); return; }
-    const id = "custom-" + Date.now();
-    onAdd({
-      id, org:f.org.trim(), role:f.role.trim(), tier:Number(f.tier),
-      cats: f.cats.length ? [...f.cats, "custom"] : ["custom"],
-      loc: f.loc.trim() || "—", comp: f.comp.trim() || "—", dur: f.dur.trim() || "—",
-      openDate: f.openDate || null,
-      appWin: f.appWin.trim() || (f.openDate ? new Date(f.openDate).toLocaleDateString("en-US",{month:"short",year:"numeric"}) : "TBD"),
-      dl: f.dl.trim() || "TBD",
-      link: f.link.trim(), angle: f.angle.trim(), urgent: f.urgent, custom: true,
-    });
-  };
-
-  const inputStyle = { width:"100%", fontSize:"13px", padding:"7px 9px", border:"1px solid #d0cfc9", borderRadius:"6px", background:"#fff", color:"#1c1c1a", boxSizing:"border-box", fontFamily:"inherit" };
-  const labelStyle = { fontSize:"10px", fontWeight:"600", color:"#8c8c88", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:"3px", display:"block" };
-  const field = (label, node) => h("div", { style:{ marginBottom:"10px" } }, h("label", { style:labelStyle }, label), node);
-
-  return h("div", { style:{ border:"1px solid #d0cfc9", borderRadius:"8px", padding:"14px", marginBottom:"14px", background:"#fff" } },
-    h("div", { style:{ fontSize:"13px", fontWeight:"600", marginBottom:"12px", color:"#1c1c1a" } }, "Add your own opportunity"),
-    h("div", { style:{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px" } },
-      field("Organization *", h("input", { style:inputStyle, value:f.org, onChange:e=>set("org", e.target.value), placeholder:"e.g. Notion" })),
-      field("Role / title *", h("input", { style:inputStyle, value:f.role, onChange:e=>set("role", e.target.value), placeholder:"e.g. Product intern" })),
-    ),
-    h("div", { style:{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"10px" } },
-      field("Location", h("input", { style:inputStyle, value:f.loc, onChange:e=>set("loc", e.target.value), placeholder:"Remote / city" })),
-      field("Compensation", h("input", { style:inputStyle, value:f.comp, onChange:e=>set("comp", e.target.value), placeholder:"$/hr or N/A" })),
-      field("Duration", h("input", { style:inputStyle, value:f.dur, onChange:e=>set("dur", e.target.value), placeholder:"10 weeks" })),
-    ),
-    h("div", { style:{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"10px" } },
-      field("Opens on (date, optional)", h("input", { type:"date", style:inputStyle, value:f.openDate, onChange:e=>set("openDate", e.target.value) })),
-      field("Opens (label text)", h("input", { style:inputStyle, value:f.appWin, onChange:e=>set("appWin", e.target.value), placeholder:"e.g. Rolling" })),
-      field("Deadline (text)", h("input", { style:inputStyle, value:f.dl, onChange:e=>set("dl", e.target.value), placeholder:"e.g. Mar 1, 2027" })),
-    ),
-    field("Tier", h("select", { style:inputStyle, value:f.tier, onChange:e=>set("tier", e.target.value) },
-      h("option", { value:1 }, "Tier 1 — mission-aligned"),
-      h("option", { value:2 }, "Tier 2 — strong fit"),
-      h("option", { value:3 }, "Tier 3 — worth watching"),
-    )),
-    field("Categories", h("div", { style:{ display:"flex", flexWrap:"wrap", gap:"6px" } },
-      ALL_CAT_OPTIONS.map(c => {
-        const on = f.cats.includes(c);
-        const b = CB[c];
-        return h("button", {
-          key:c, type:"button", onClick:()=>toggleCat(c),
-          style:{ fontSize:"11px", padding:"3px 9px", borderRadius:"20px", cursor:"pointer",
-                  border: on ? "1px solid transparent" : "1px solid #d0cfc9",
-                  background: on ? b.bg : "transparent", color: on ? b.fg : "#8c8c88", fontWeight:"500" },
-        }, b.label);
-      })
-    )),
-    field("Link", h("input", { style:inputStyle, value:f.link, onChange:e=>set("link", e.target.value), placeholder:"https://..." })),
-    field("Your angle / notes", h("textarea", { style:{...inputStyle, minHeight:"60px", resize:"vertical"}, value:f.angle, onChange:e=>set("angle", e.target.value), placeholder:"Why this is worth pursuing, contacts, next steps..." })),
-    h("label", { style:{ fontSize:"12px", color:"#6b6b67", display:"flex", alignItems:"center", gap:"6px", marginBottom:"12px", cursor:"pointer" } },
-      h("input", { type:"checkbox", checked:f.urgent, onChange:e=>set("urgent", e.target.checked) }),
-      "No fixed deadline — needs direct outreach (flags as \"act now\")"
-    ),
-    h("div", { style:{ display:"flex", gap:"8px" } },
-      h("button", { onClick:submit, style:{ fontSize:"12px", fontWeight:"600", padding:"7px 14px", borderRadius:"20px", border:"none", background:"#1c1c1a", color:"#fff", cursor:"pointer" } }, "Add to tracker"),
-      h("button", { onClick:onCancel, style:{ fontSize:"12px", padding:"7px 14px", borderRadius:"20px", border:"1px solid #d0cfc9", background:"transparent", color:"#6b6b67", cursor:"pointer" } }, "Cancel"),
-    )
-  );
-}
-
-/* ---------- main App ---------- */
-function App() {
-  const ref = useRef({ statuses:{}, notes:{}, customOpps:[] });
+export default function App() {
+  const ref = useRef({ statuses:{}, notes:{} });
   const [statuses, setStatuses] = useState({});
-  const [notes, setNotes] = useState({});
-  const [customOpps, setCustomOpps] = useState([]);
-  const [cat, setCat] = useState("all");
-  const [tierF, setTierF] = useState("all");
+  const [notes,    setNotes]    = useState({});
+  const [cat,      setCat]      = useState("all");
+  const [tierF,    setTierF]    = useState("all");
   const [expanded, setExpanded] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [msg, setMsg] = useState("");
-  const [loaded, setLoaded] = useState(false);
+  const [msg,      setMsg]      = useState("");
 
   useEffect(() => {
-    const d = loadData();
-    ref.current = d;
-    setStatuses({ ...d.statuses });
-    setNotes({ ...d.notes });
-    setCustomOpps([ ...d.customOpps ]);
-    setLoaded(true);
+    (async () => {
+      try {
+        const r = await window.storage.get("intern-tracker-v4");
+        if (r?.value) {
+          const d = JSON.parse(r.value);
+          ref.current = { statuses: d.statuses||{}, notes: d.notes||{} };
+          setStatuses({...ref.current.statuses});
+          setNotes({...ref.current.notes});
+        }
+      } catch(e) {}
+    })();
   }, []);
 
-  const persist = () => {
-    const ok = saveData(ref.current);
-    setMsg(ok ? "saved" : "save failed — check browser storage settings");
-    setTimeout(() => setMsg(""), 1500);
+  const save = async () => {
+    try {
+      await window.storage.set("intern-tracker-v4", JSON.stringify(ref.current));
+      setMsg("saved"); setTimeout(() => setMsg(""), 1400);
+    } catch(e) { setMsg("error"); }
   };
 
   const setStatus = (id, v) => {
-    ref.current.statuses = { ...ref.current.statuses, [id]: v };
-    setStatuses({ ...ref.current.statuses });
-    persist();
+    ref.current.statuses = {...ref.current.statuses, [id]:v};
+    setStatuses({...ref.current.statuses}); save();
   };
   const setNote = (id, v) => {
-    ref.current.notes = { ...ref.current.notes, [id]: v };
-    setNotes({ ...ref.current.notes });
-  };
-  const addOpp = (opp) => {
-    ref.current.customOpps = [ ...ref.current.customOpps, opp ];
-    setCustomOpps([ ...ref.current.customOpps ]);
-    persist();
-    setShowForm(false);
-  };
-  const deleteOpp = (id) => {
-    if (!confirm("Remove this opportunity you added?")) return;
-    ref.current.customOpps = ref.current.customOpps.filter(o => o.id !== id);
-    setCustomOpps([ ...ref.current.customOpps ]);
-    persist();
-    if (expanded === id) setExpanded(null);
+    ref.current.notes = {...ref.current.notes, [id]:v};
+    setNotes({...ref.current.notes});
   };
 
-  const downloadFile = (filename, content, mime) => {
-    const blob = new Blob([content], { type: mime });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const exportBackup = () => {
-    const stamp = new Date().toISOString().slice(0,10);
-    downloadFile(`internship-tracker-backup-${stamp}.json`, JSON.stringify(ref.current, null, 2), "application/json");
-    setMsg("backup downloaded"); setTimeout(() => setMsg(""), 1500);
-  };
-
-  const importInputRef = useRef(null);
-  const triggerImport = () => importInputRef.current && importInputRef.current.click();
-  const handleImportFile = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      try {
-        const d = JSON.parse(ev.target.result);
-        if (!confirm("This will replace all current tracker data (statuses, notes, and your added opportunities) with the contents of this backup file. Continue?")) return;
-        const restored = { statuses: d.statuses||{}, notes: d.notes||{}, customOpps: d.customOpps||[] };
-        ref.current = restored;
-        setStatuses({ ...restored.statuses });
-        setNotes({ ...restored.notes });
-        setCustomOpps([ ...restored.customOpps ]);
-        persist();
-        setMsg("restored from backup");
-      } catch (err) {
-        alert("That file doesn't look like a valid backup — couldn't parse it as JSON.");
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = "";
-  };
-
-  const csvEscape = (v) => `"${String(v==null?"":v).replace(/"/g,'""')}"`;
-  const exportCSV = () => {
-    const header = ["Organization","Role","Tier","Status","Categories","Location","Compensation","Duration","Opens","Deadline","Link","Angle / Notes (built-in)","Your Notes"];
-    const lines = [header.map(csvEscape).join(",")];
-    allOpps.forEach(o => {
-      lines.push([
-        o.org, o.role, o.tier, statuses[o.id]||"Not started", o.cats.join("; "),
-        o.loc, o.comp, o.dur, o.appWin, o.dl, o.link, o.angle||"", notes[o.id]||"",
-      ].map(csvEscape).join(","));
-    });
-    const stamp = new Date().toISOString().slice(0,10);
-    downloadFile(`internship-tracker-${stamp}.csv`, lines.join("\n"), "text/csv");
-    setMsg("CSV downloaded"); setTimeout(() => setMsg(""), 1500);
-  };
-
-  const allOpps = [ ...OPPS, ...customOpps ];
-
-  const rows = allOpps.filter(o => {
-    const cOk = cat === "all" ? true : cat === "actnow" ? isActNow(o) : o.cats.includes(cat);
-    const tOk = tierF === "all" || o.tier === Number(tierF);
+  const rows = OPPS.filter(o => {
+    const cOk = cat==="all" ? true : cat==="actnow" ? isActNow(o) : o.cats.includes(cat);
+    const tOk = tierF==="all" || o.tier===Number(tierF);
     return cOk && tOk;
   });
 
-  const cnt = (...vals) => allOpps.filter(o => vals.includes(statuses[o.id] || "Not started")).length;
-  const actN = allOpps.filter(o => isActNow(o) && !["Applied","Waiting","Offer","Accepted","Rejected"].includes(statuses[o.id] || "Not started")).length;
+  const cnt = (...vals) => OPPS.filter(o => vals.includes(statuses[o.id]||"Not started")).length;
+  const actN = OPPS.filter(o => isActNow(o) && !["Applied","Waiting","Offer","Accepted","Rejected"].includes(statuses[o.id]||"Not started")).length;
 
   const pill = (on) => ({
     fontSize:"12px", padding:"4px 10px", border:"1px solid #d0cfc9",
     borderRadius:"20px", cursor:"pointer", fontFamily:"inherit",
-    background: on ? "#1c1c1a" : "transparent", color: on ? "#fff" : "#6b6b67",
+    background: on ? "#1c1c1a" : "transparent",
+    color:      on ? "#fff"    : "#6b6b67",
   });
 
-  const today = new Date().toLocaleDateString("en-US", { month:"long", day:"numeric", year:"numeric" });
+  const today = new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
 
-  if (!loaded) return h("div", null, "Loading…");
+  return (
+    <div style={{padding:"0.5rem 0.25rem",fontFamily:"inherit"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:"0.75rem",flexWrap:"wrap",gap:"4px"}}>
+        <span style={{fontSize:"14px",fontWeight:"600",color:"#1c1c1a"}}>Summer 2027 Internship Tracker</span>
+        <span style={{fontSize:"11px",color:"#8c8c88"}}>Today: {today}</span>
+      </div>
 
-  return h("div", { style:{ padding:"0.5rem 0.25rem" } },
-    h("div", { style:{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:"0.75rem", flexWrap:"wrap", gap:"4px" } },
-      h("span", { style:{ fontSize:"16px", fontWeight:"700", color:"#1c1c1a" } }, "Summer 2027 Internship Tracker"),
-      h("span", { style:{ fontSize:"11px", color:"#8c8c88" } }, "Today: " + today),
-    ),
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(0,1fr))",gap:"8px",marginBottom:"1rem"}}>
+        {[
+          {n:OPPS.length,             label:"total",       c:"#1c1c1a"},
+          {n:cnt("Researching","In progress"), label:"in progress", c:"#185FA5"},
+          {n:cnt("Applied","Waiting","Offer","Accepted"), label:"applied", c:"#534AB7"},
+          {n:actN,                    label:"act now",     c:"#BA7517"},
+        ].map(s => (
+          <div key={s.label} style={{background:"#f4f3ef",borderRadius:"8px",padding:"10px 8px",textAlign:"center"}}>
+            <div style={{fontSize:"22px",fontWeight:"500",color:s.c,lineHeight:1.1}}>{s.n}</div>
+            <div style={{fontSize:"11px",color:"#8c8c88",marginTop:"2px"}}>{s.label}</div>
+          </div>
+        ))}
+      </div>
 
-    h("div", { style:{ display:"flex", flexWrap:"wrap", gap:"6px", marginBottom:"1rem" } },
-      h("button", { onClick:exportBackup, style:{ fontSize:"11px", padding:"5px 10px", borderRadius:"20px", border:"1px solid #d0cfc9", background:"transparent", color:"#6b6b67", cursor:"pointer" } }, "⬇ Backup (.json)"),
-      h("button", { onClick:triggerImport, style:{ fontSize:"11px", padding:"5px 10px", borderRadius:"20px", border:"1px solid #d0cfc9", background:"transparent", color:"#6b6b67", cursor:"pointer" } }, "⬆ Restore from backup"),
-      h("input", { ref:importInputRef, type:"file", accept:"application/json", onChange:handleImportFile, style:{ display:"none" } }),
-      h("button", { onClick:exportCSV, style:{ fontSize:"11px", padding:"5px 10px", borderRadius:"20px", border:"1px solid #d0cfc9", background:"transparent", color:"#6b6b67", cursor:"pointer" } }, "⬇ Export as spreadsheet (.csv)"),
-    ),
+      <div style={{display:"flex",alignItems:"center",gap:"4px",flexWrap:"wrap",marginBottom:"6px"}}>
+        {CATS.map(c => <button key={c.id} onClick={()=>setCat(c.id)} style={pill(cat===c.id)}>{c.label}</button>)}
+        <div style={{marginLeft:"auto",display:"flex",gap:"4px"}}>
+          {[["all","All"],["1","T1"],["2","T2"],["3","T3"]].map(([id,label]) => (
+            <button key={id} onClick={()=>setTierF(id)} style={{...pill(tierF===id),fontSize:"11px",padding:"3px 8px"}}>{label}</button>
+          ))}
+        </div>
+      </div>
 
-    h("div", { style:{ display:"grid", gridTemplateColumns:"repeat(4,minmax(0,1fr))", gap:"8px", marginBottom:"1rem" } },
-      [
-        { n: allOpps.length, label:"total", c:"#1c1c1a" },
-        { n: cnt("Researching","In progress"), label:"in progress", c:"#185FA5" },
-        { n: cnt("Applied","Waiting","Offer","Accepted"), label:"applied", c:"#534AB7" },
-        { n: actN, label:"act now", c:"#BA7517" },
-      ].map(s => h("div", { key:s.label, style:{ background:"#f4f3ef", borderRadius:"8px", padding:"10px 8px", textAlign:"center" } },
-        h("div", { style:{ fontSize:"22px", fontWeight:"600", color:s.c, lineHeight:1.1 } }, s.n),
-        h("div", { style:{ fontSize:"11px", color:"#8c8c88", marginTop:"2px" } }, s.label),
-      ))
-    ),
+      <p style={{fontSize:"12px",color:"#8c8c88",margin:"0 0 0.75rem"}}>
+        {rows.length}/{OPPS.length} shown · click any row for details + notes{msg?` · ${msg}`:""}
+      </p>
 
-    h("div", { style:{ display:"flex", alignItems:"center", gap:"4px", flexWrap:"wrap", marginBottom:"6px" } },
-      CATS.map(c => h("button", { key:c.id, onClick:()=>setCat(c.id), style:pill(cat===c.id) }, c.label)),
-      h("div", { style:{ marginLeft:"auto", display:"flex", gap:"4px" } },
-        [["all","All"],["1","T1"],["2","T2"],["3","T3"]].map(([id,label]) =>
-          h("button", { key:id, onClick:()=>setTierF(id), style:{...pill(tierF===id), fontSize:"11px", padding:"3px 8px"} }, label)
-        )
-      )
-    ),
+      {[1,2,3].map(t => {
+        const tRows = rows.filter(o => o.tier===t);
+        if (!tRows.length) return null;
+        return (
+          <div key={t}>
+            <p style={{fontSize:"11px",fontWeight:"600",letterSpacing:"0.05em",color:"#8c8c88",textTransform:"uppercase",margin:"1.25rem 0 6px"}}>{TL[t]}</p>
+            {tRows.map(o => {
+              const status = statuses[o.id]||"Not started";
+              const note   = notes[o.id]||"";
+              const isExp  = expanded===o.id;
+              const st     = SS[status]||SS["Not started"];
+              const cd     = countdownBadge(o);
+              return (
+                <div key={o.id} style={{borderRadius:"8px",border:"0.5px solid #e0dfd9",borderLeft:`3px solid ${TC[t]}`,marginBottom:"8px",background:"#fff",overflow:"hidden"}}>
+                  <div onClick={()=>setExpanded(isExp?null:o.id)} style={{display:"flex",alignItems:"center",gap:"8px",padding:"10px 12px",cursor:"pointer"}}>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{display:"flex",alignItems:"center",gap:"5px",marginBottom:"2px"}}>
+                        <span style={{fontWeight:"500",fontSize:"14px",color:"#1c1c1a",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{o.org}</span>
+                        {o.eligNote && <AlertTriangle size={12} color="#BA7517" style={{flexShrink:0}} />}
+                      </div>
+                      <div style={{fontSize:"12px",color:"#6b6b67",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{o.role}</div>
+                    </div>
+                    <span style={{fontSize:"11px",fontWeight:"600",padding:"2px 8px",borderRadius:"20px",background:cd.bg,color:cd.fg,flexShrink:0,whiteSpace:"nowrap"}}>{cd.label}</span>
+                    <select value={status} onChange={e=>{e.stopPropagation();setStatus(o.id,e.target.value);}} onClick={e=>e.stopPropagation()}
+                      style={{fontSize:"11px",padding:"3px 6px",border:`1px solid ${st.fg}55`,borderRadius:"20px",cursor:"pointer",background:st.bg,color:st.fg,fontWeight:"500",flexShrink:0,maxWidth:"108px",fontFamily:"inherit"}}>
+                      {STATUSES.map(s=><option key={s} value={s}>{s}</option>)}
+                    </select>
+                    {isExp ? <ChevronUp size={14} color="#8c8c88" style={{flexShrink:0}}/> : <ChevronDown size={14} color="#8c8c88" style={{flexShrink:0}}/>}
+                  </div>
 
-    h("div", { style:{ margin:"8px 0 14px" } },
-      !showForm
-        ? h("button", { onClick:()=>setShowForm(true),
-            style:{ fontSize:"12px", fontWeight:"600", padding:"7px 14px", borderRadius:"20px", border:"1px dashed #185FA5", background:"#E6F1FB", color:"#0C447C", cursor:"pointer", display:"inline-flex", alignItems:"center", gap:"5px" } },
-            h(IPlus, { size:11, color:"#0C447C" }), "Add your own opportunity"
-          )
-        : h(AddForm, { onAdd:addOpp, onCancel:()=>setShowForm(false) })
-    ),
+                  {isExp && (
+                    <div style={{borderTop:"0.5px solid #e0dfd9",padding:"12px 14px"}}>
+                      {o.eligNote && (
+                        <div style={{background:"#FAEEDA",borderRadius:"6px",padding:"8px 10px",marginBottom:"10px",fontSize:"12px",color:"#633806",lineHeight:"1.5",display:"flex",gap:"6px"}}>
+                          <AlertTriangle size={13} style={{flexShrink:0,marginTop:"1px"}}/>
+                          <span>{o.eligNote}</span>
+                        </div>
+                      )}
+                      <div style={{display:"flex",flexWrap:"wrap",gap:"12px",marginBottom:"8px"}}>
+                        <span style={{fontSize:"12px",color:"#6b6b67",display:"flex",alignItems:"center",gap:"3px"}}><MapPin size={11} color="#8c8c88"/>{o.loc}</span>
+                        <span style={{fontSize:"12px",color:"#6b6b67",display:"flex",alignItems:"center",gap:"3px"}}><Clock size={11} color="#8c8c88"/>{o.dur}</span>
+                        <span style={{fontSize:"12px",color:"#6b6b67",display:"flex",alignItems:"center",gap:"3px"}}><DollarSign size={11} color="#8c8c88"/>{o.comp}</span>
+                      </div>
+                      <div style={{display:"flex",flexWrap:"wrap",gap:"12px",marginBottom:"10px"}}>
+                        <span style={{fontSize:"12px",color:"#6b6b67",display:"flex",alignItems:"center",gap:"3px"}}><CalendarDays size={11} color="#8c8c88"/><b style={{fontWeight:"500"}}>Opens:</b>&nbsp;{o.appWin}</span>
+                        <span style={{fontSize:"12px",color:"#6b6b67",display:"flex",alignItems:"center",gap:"3px"}}><CalendarDays size={11} color="#8c8c88"/><b style={{fontWeight:"500"}}>Deadline:</b>&nbsp;{o.dl}</span>
+                      </div>
+                      <div style={{display:"flex",gap:"4px",flexWrap:"wrap",marginBottom:"10px"}}>
+                        {o.cats.map(c=>{const b=CB[c]||{bg:"#F1EFE8",fg:"#444",label:c};return <span key={c} style={{fontSize:"11px",padding:"2px 8px",borderRadius:"20px",background:b.bg,color:b.fg,fontWeight:"500"}}>{b.label}</span>;})}
+                      </div>
+                      <div style={{marginBottom:"10px"}}>
+                        <div style={{fontSize:"10px",fontWeight:"600",color:"#8c8c88",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:"4px"}}>Your angle</div>
+                        <div style={{fontSize:"13px",color:"#1c1c1a",lineHeight:"1.6"}}>{o.angle}</div>
+                      </div>
+                      <div style={{marginBottom:"10px"}}>
+                        <a href={o.link} target="_blank" rel="noopener noreferrer" style={{fontSize:"12px",color:"#185FA5",textDecoration:"none",display:"inline-flex",alignItems:"center",gap:"4px"}}>
+                          <ExternalLink size={12}/> Careers page
+                        </a>
+                      </div>
+                      <div>
+                        <div style={{fontSize:"10px",fontWeight:"600",color:"#8c8c88",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:"4px"}}>Notes</div>
+                        <textarea value={note} onChange={e=>setNote(o.id,e.target.value)} onBlur={save}
+                          placeholder="Contacts, next steps, interview notes, key dates..."
+                          style={{width:"100%",minHeight:"60px",fontSize:"13px",padding:"8px 10px",border:"1px solid #d0cfc9",borderRadius:"6px",background:"#f8f7f3",color:"#1c1c1a",resize:"vertical",boxSizing:"border-box",fontFamily:"inherit",lineHeight:"1.5"}}/>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
 
-    h("p", { style:{ fontSize:"12px", color:"#8c8c88", margin:"0 0 0.75rem" } },
-      `${rows.length}/${allOpps.length} shown · click any row for details + notes${msg ? " · " + msg : ""}`
-    ),
+      <p style={{fontSize:"11px",fontWeight:"600",letterSpacing:"0.05em",color:"#8c8c88",textTransform:"uppercase",margin:"1.5rem 0 6px"}}>Watching for 2028 (junior year cycle)</p>
+      {WATCHLIST.map(w => (
+        <div key={w.id} style={{borderRadius:"8px",border:"0.5px dashed #d0cfc9",padding:"10px 12px",marginBottom:"8px",background:"#f8f7f3"}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px",marginBottom:"4px"}}>
+            <span style={{fontWeight:"500",fontSize:"13px",color:"#1c1c1a"}}>{w.org}</span>
+            <a href={w.link} target="_blank" rel="noopener noreferrer" style={{fontSize:"11px",color:"#185FA5",textDecoration:"none",display:"inline-flex",alignItems:"center",gap:"3px",flexShrink:0}}>
+              <ExternalLink size={11}/> link
+            </a>
+          </div>
+          <div style={{fontSize:"12px",color:"#6b6b67",marginBottom:"4px"}}>{w.role}</div>
+          <div style={{fontSize:"12px",color:"#8c8c88",lineHeight:"1.5"}}>{w.why}</div>
+        </div>
+      ))}
 
-    [1,2,3].map(t => {
-      const tRows = rows.filter(o => o.tier === t);
-      if (!tRows.length) return null;
-      return h("div", { key:t },
-        h("p", { style:{ fontSize:"11px", fontWeight:"700", letterSpacing:"0.05em", color:"#8c8c88", textTransform:"uppercase", margin:"1.25rem 0 6px" } }, TL[t]),
-        tRows.map(o => {
-          const status = statuses[o.id] || "Not started";
-          const note = notes[o.id] || "";
-          const isExp = expanded === o.id;
-          const st = SS[status] || SS["Not started"];
-          const cd = countdownBadge(o);
-          return h("div", { key:o.id, style:{ borderRadius:"8px", border:"1px solid #e0dfd9", borderLeft:`3px solid ${TC[t]}`, marginBottom:"8px", background:"#fff", overflow:"hidden" } },
-            h("div", { onClick:()=>setExpanded(isExp?null:o.id), style:{ display:"flex", alignItems:"center", gap:"8px", padding:"10px 12px", cursor:"pointer" } },
-              h("div", { style:{ flex:1, minWidth:0 } },
-                h("div", { style:{ display:"flex", alignItems:"center", gap:"5px", marginBottom:"2px" } },
-                  h("span", { style:{ fontWeight:"600", fontSize:"14px", color:"#1c1c1a", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" } }, o.org),
-                  o.eligNote && h(IWarn, { size:12, color:"#BA7517" }),
-                  o.custom && h("span", { style:{ fontSize:"9px", padding:"1px 6px", borderRadius:"20px", background:CB.custom.bg, color:CB.custom.fg, fontWeight:"600", flexShrink:0 } }, "yours"),
-                ),
-                h("div", { style:{ fontSize:"12px", color:"#6b6b67", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" } }, o.role),
-              ),
-              h("span", { style:{ fontSize:"11px", fontWeight:"600", padding:"2px 8px", borderRadius:"20px", background:cd.bg, color:cd.fg, flexShrink:0, whiteSpace:"nowrap" } }, cd.label),
-              h("select", { value:status, onChange:e=>{e.stopPropagation(); setStatus(o.id, e.target.value);}, onClick:e=>e.stopPropagation(),
-                style:{ fontSize:"11px", padding:"3px 6px", border:`1px solid ${st.fg}55`, borderRadius:"20px", cursor:"pointer", background:st.bg, color:st.fg, fontWeight:"600", flexShrink:0, maxWidth:"108px", fontFamily:"inherit" } },
-                STATUSES.map(s => h("option", { key:s, value:s }, s))
-              ),
-              isExp ? h(IChevUp, { size:14 }) : h(IChevDown, { size:14 }),
-            ),
-            isExp && h("div", { style:{ borderTop:"1px solid #e0dfd9", padding:"12px 14px" } },
-              o.eligNote && h("div", { style:{ background:"#FAEEDA", borderRadius:"6px", padding:"8px 10px", marginBottom:"10px", fontSize:"12px", color:"#633806", lineHeight:"1.5", display:"flex", gap:"6px" } },
-                h(IWarn, { size:13, color:"#633806", style:{ marginTop:"1px", flexShrink:0 } }),
-                h("span", null, o.eligNote)
-              ),
-              h("div", { style:{ display:"flex", flexWrap:"wrap", gap:"12px", marginBottom:"8px" } },
-                h("span", { style:{ fontSize:"12px", color:"#6b6b67", display:"flex", alignItems:"center", gap:"3px" } }, h(IPin,{size:11}), o.loc),
-                h("span", { style:{ fontSize:"12px", color:"#6b6b67", display:"flex", alignItems:"center", gap:"3px" } }, h(IClock,{size:11}), o.dur),
-                h("span", { style:{ fontSize:"12px", color:"#6b6b67", display:"flex", alignItems:"center", gap:"3px" } }, h(IDollar,{size:11}), o.comp),
-              ),
-              h("div", { style:{ display:"flex", flexWrap:"wrap", gap:"12px", marginBottom:"10px" } },
-                h("span", { style:{ fontSize:"12px", color:"#6b6b67", display:"flex", alignItems:"center", gap:"3px" } }, h(ICal,{size:11}), h("b",{style:{fontWeight:"600"}},"Opens:")," ",o.appWin),
-                h("span", { style:{ fontSize:"12px", color:"#6b6b67", display:"flex", alignItems:"center", gap:"3px" } }, h(ICal,{size:11}), h("b",{style:{fontWeight:"600"}},"Deadline:")," ",o.dl),
-              ),
-              h("div", { style:{ display:"flex", gap:"4px", flexWrap:"wrap", marginBottom:"10px" } },
-                o.cats.map(c => { const b = CB[c] || { bg:"#F1EFE8", fg:"#444", label:c }; return h("span", { key:c, style:{ fontSize:"11px", padding:"2px 8px", borderRadius:"20px", background:b.bg, color:b.fg, fontWeight:"500" } }, b.label); })
-              ),
-              o.angle && h("div", { style:{ marginBottom:"10px" } },
-                h("div", { style:{ fontSize:"10px", fontWeight:"700", color:"#8c8c88", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:"4px" } }, "Your angle"),
-                h("div", { style:{ fontSize:"13px", color:"#1c1c1a", lineHeight:"1.6" } }, o.angle),
-              ),
-              h("div", { style:{ marginBottom:"10px", display:"flex", justifyContent:"space-between", alignItems:"center" } },
-                o.link ? h("a", { href:o.link, target:"_blank", rel:"noopener noreferrer", style:{ fontSize:"12px", color:"#185FA5", textDecoration:"none", display:"inline-flex", alignItems:"center", gap:"4px" } }, h(ILink,{size:12,color:"#185FA5"}), "Careers page") : h("span"),
-                o.custom && h("button", { onClick:()=>deleteOpp(o.id), style:{ fontSize:"11px", color:"#A32D2D", background:"transparent", border:"1px solid #f0c0c0", borderRadius:"20px", padding:"3px 10px", cursor:"pointer", display:"inline-flex", alignItems:"center", gap:"4px" } }, h(ITrash,{size:10,color:"#A32D2D"}), "Remove"),
-              ),
-              h("div", null,
-                h("div", { style:{ fontSize:"10px", fontWeight:"700", color:"#8c8c88", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:"4px" } }, "Notes"),
-                h("textarea", { value:note, onChange:e=>setNote(o.id, e.target.value), onBlur:persist,
-                  placeholder:"Contacts, next steps, interview notes, key dates...",
-                  style:{ width:"100%", minHeight:"60px", fontSize:"13px", padding:"8px 10px", border:"1px solid #d0cfc9", borderRadius:"6px", background:"#f8f7f3", color:"#1c1c1a", resize:"vertical", boxSizing:"border-box", fontFamily:"inherit", lineHeight:"1.5" } }),
-              )
-            )
-          );
-        })
-      );
-    }),
-
-    h("p", { style:{ fontSize:"11px", fontWeight:"700", letterSpacing:"0.05em", color:"#8c8c88", textTransform:"uppercase", margin:"1.5rem 0 6px" } }, "Watching for 2028 (junior year cycle)"),
-    WATCHLIST.map(w => h("div", { key:w.id, style:{ borderRadius:"8px", border:"1px dashed #d0cfc9", padding:"10px 12px", marginBottom:"8px", background:"#f8f7f3" } },
-      h("div", { style:{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:"8px", marginBottom:"4px" } },
-        h("span", { style:{ fontWeight:"600", fontSize:"13px", color:"#1c1c1a" } }, w.org),
-        h("a", { href:w.link, target:"_blank", rel:"noopener noreferrer", style:{ fontSize:"11px", color:"#185FA5", textDecoration:"none", display:"inline-flex", alignItems:"center", gap:"3px", flexShrink:0 } }, h(ILink,{size:11,color:"#185FA5"}), "link"),
-      ),
-      h("div", { style:{ fontSize:"12px", color:"#6b6b67", marginBottom:"4px" } }, w.role),
-      h("div", { style:{ fontSize:"12px", color:"#8c8c88", lineHeight:"1.5" } }, w.why),
-    )),
-
-    h("p", { style:{ fontSize:"11px", color:"#8c8c88", marginTop:"1.5rem", borderTop:"1px solid #e0dfd9", paddingTop:"12px" } },
-      `${allOpps.length} opportunities (${OPPS.length} built-in + ${customOpps.length} yours) · Saved to this browser's storage. Download a backup periodically — clearing browser data or switching devices/browsers will not carry your saved statuses and notes over.`
-    ),
+      <p style={{fontSize:"11px",color:"#8c8c88",marginTop:"1.5rem",borderTop:"0.5px solid #e0dfd9",paddingTop:"12px"}}>
+        29 opportunities · Countdown badges update live from today\'s date · Status + notes persist across sessions
+      </p>
+    </div>
   );
 }
-
-ReactDOM.createRoot(document.getElementById("root")).render(h(App));
-</script>
-</body>
-</html>

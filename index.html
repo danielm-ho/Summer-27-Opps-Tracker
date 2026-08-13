@@ -41,19 +41,39 @@ const IChevUp   = p => h(Icon, p, "▴");
 const ITrash    = p => h(Icon, p, "✕");
 const IPlus     = p => h(Icon, p, "＋");
 
-/* ---------- built-in opportunities (edit this list directly if you want to hand-edit rather than use the form) ---------- */
+/* ---------- built-in opportunities (edit this list directly if you want to hand-edit rather than use the form) ----------
+
+   FIELD NOTES — added 2026-08-13 after dates and links turned out unreliable:
+
+   conf       "confirmed" = open/close dates read off the employer's own page on the `checked` date.
+              "estimate"  = projected from prior cycles. Shown with a dashed "est." marker. Do not trust to the day.
+              "closed"    = this cycle's window has already passed.
+   checked    Date the entry was last verified against a live source.
+   roleTitle  The EXACT posting title to look for. Big employers list many similar internships with
+              different eligibility; matching this string is what stops you applying to the wrong one.
+   searchLink Pre-filtered search on the employer's own job portal. Survives posting-ID rotation.
+   link       Direct posting or program page. May go dead between cycles — searchLink is the fallback.
+------------------------------------------------------------------------------------------------------- */
 const OPPS = [
   // ── TIER 1 ──────────────────────────────────────────────────────────────
   { id:"duolingo", org:"Duolingo", role:"Thrive Program — PM, design, or engineering",
     tier:1, cats:["edtech","local"], loc:"Pittsburgh, PA", comp:"~$50/hr", dur:"10 weeks",
-    openDate:"2026-08-15", appWin:"Mid-Aug 2026", dl:"~Sept 30, 2026",
+    openDate:"2026-09-15", appWin:"Sept–Oct 2026", dl:"~Nov 2026",
+    conf:"estimate", checked:"2026-08-13",
+    roleTitle:"Thrive Intern (role varies: Software Engineer, Thrive Intern / APM, Thrive Intern)",
     link:"https://careers.duolingo.com",
-    angle:"CMU is 5 min away. Thrive targets sophomores graduating Spring 2029 — you fit exactly. Apply to PM/Design track AND the APM intern track separately. Product decisions vs. learning outcomes = your systems framing." },
-  { id:"khan", org:"Khan Academy", role:"Content, product, data, or SWE intern",
-    tier:1, cats:["edtech"], loc:"Remote", comp:"$42/hr", dur:"8-12 weeks",
-    openDate:"2026-09-01", appWin:"Sept 2026", dl:"~Oct 31, 2026",
-    link:"https://www.khanacademy.org/careers/interns",
-    angle:"Pamoza media + LitCorps literacy = uniquely coherent content track story almost no applicant has. Product/data tracks apply IS skills to nonprofit edtech at scale." },
+    searchLink:"https://careers.duolingo.com/?search=thrive",
+    angle:"CMU is 5 min away. Thrive targets second-year students — you fit exactly. Product decisions vs. learning outcomes = your systems framing.",
+    eligNote:"NOT rolling. Duolingo reviews after the deadline closes, so missing the window means waiting a full year — unlike almost everything else on this list. Roughly 25 seats against thousands of applications. As of Aug 13, 2026 the Summer 2027 Thrive posting was not yet live; the Sept–Oct estimate comes from prior cycles, so check the careers page weekly from early September." },
+  { id:"khan", org:"Khan Academy", role:"Summer Software Engineering Intern",
+    tier:1, cats:["edtech"], loc:"Remote (US & Canada)", comp:"$42/hr", dur:"10-12 weeks",
+    openDate:"2026-10-01", appWin:"~Oct 2026", dl:"~Nov–Dec 2026",
+    conf:"estimate", checked:"2026-08-13",
+    roleTitle:"Software Engineer Intern",
+    link:"https://www.khanacademy.org/about/internships",
+    searchLink:"https://www.khanacademy.org/careers",
+    angle:"Pamoza media + LitCorps literacy = a coherent mission story almost no applicant has. Lead with that in the cover letter even though the role itself is engineering.",
+    eligNote:"Correction from the original entry: Khan's formal summer program is Software Engineering only — the content/product/data tracks it previously listed here are not part of the intern program. It also targets rising juniors and seniors; you'd be a rising junior in summer 2027, so you qualify. Non-SWE work at Khan would need direct outreach instead." },
   { id:"cif", org:"Coding it Forward", role:"SWE, data, design, or PM — federal agency placement",
     tier:1, cats:["civic","fellowship"], loc:"Federal agencies (varies)", comp:"$20-25/hr", dur:"10 weeks",
     openDate:"2026-12-01", appWin:"Dec 2026", dl:"~Jan 19, 2027",
@@ -77,11 +97,15 @@ const OPPS = [
     link:"https://www.lifeatspotify.com/start-your-journey/students",
     angle:"Ottoman Empire + 700K IG views = authentic music tech story almost no other candidate has. Apply to product or business track, not SWE.",
     eligNote:"Spotify typically wants graduation 2027 or 2028. Class of 2029 may be one year early — still worth applying; strong candidate for summer 2028 regardless." },
-  { id:"c1", org:"Capital One", role:"Product Summit (2-day) + Product Early Internship pipeline",
-    tier:2, cats:["fintech"], loc:"Various", comp:"Summit: free · Internship: competitive", dur:"Summit: 2 days · Internship: 10-12 wks",
-    openDate:"2026-06-01", appWin:"Rolling — email now", dl:"Rolling",
-    link:"https://www.capitalonecareers.com/get-ahead-with-early-career-programs-for-students",
-    angle:"LendingLens + HMDA equity work = financial inclusion angle. IS is an explicitly listed qualifying major. Email ProductEE@capitalone.com and AnalystEE@capitalone.com.",
+  { id:"c1", org:"Capital One", role:"Analyst Early Internship Program — Summer 2027 (req R244231)",
+    tier:2, cats:["fintech"], loc:"McLean, VA (in-person, hybrid model)", comp:"$89,000 annualized, prorated · corporate housing provided", dur:"10 weeks, June–Aug 2027",
+    openDate:"2026-08-12", appWin:"OPEN NOW — posted Aug 12, 2026", dl:"Min. 5 business days; rolling until filled",
+    conf:"confirmed", checked:"2026-08-13",
+    roleTitle:"Analyst Early Internship Program - Summer 2027 (req R244231, McLean VA)",
+    link:"https://capitalone.wd12.myworkdayjobs.com/Capital_One/job/McLean-VA/Analyst-Early-Internship-Program---Summer-2027_R244231/apply",
+    searchLink:"https://www.capitalonecareers.com/early-internships-program",
+    angle:"LendingLens + HMDA equity work = financial inclusion angle, and the project is literally \"frame a business challenge and give leaders a strategic recommendation.\" Learn SQL on their dime. Corporate housing is provided, so McLean costs you nothing to live in. Separately, the 2-day Product Summit is a different pipeline — email ProductEE@capitalone.com and AnalystEE@capitalone.com rather than hunting for a posting.",
+    eligNote:"Highest-priority item on this list right now. Posted Aug 12, 2026 and Capital One only commits to accepting applications for a minimum of 5 business days — this could close within a week or two. Eligibility read directly off the posting: sophomore undergraduate standing for the 2026-27 academic year, degree completed by August 2030 or earlier. You match on both. No visa sponsorship offered.",
     urgent:true },
   { id:"gpf", org:"Google", role:"Public Policy Fellowship — placed at policy/advocacy org",
     tier:2, cats:["civic","fellowship"], loc:"Various US markets", comp:"Stipend", dur:"Semester",
@@ -100,9 +124,13 @@ const OPPS = [
     angle:"LendingLens fits housing/community dev offices. Philly community roots (Aceing Autism, MCG Youth). Capstone presentation to city leaders is a networking asset." },
   { id:"deloitte", org:"Deloitte", role:"Discovery Internship → Business Technology Analyst Intern",
     tier:2, cats:["consulting"], loc:"Various US offices", comp:"Competitive", dur:"Discovery: multi-day · Internship: 8-10 wks",
-    openDate:"2026-08-01", appWin:"Aug 2026", dl:"Rolling, early fall",
-    link:"https://www.deloitte.com/us/en/careers/internships.html",
-    angle:"Confirmed CMU IS sophomore track (BTA + Strategy roles, summer 2025). Apply to Discovery first — it's a direct pipeline to the full internship." },
+    openDate:null, appWin:"Summer 2027 window appears CLOSED", dl:"Next cycle: fall/winter 2026–27 for summer 2028",
+    conf:"closed", checked:"2026-08-13",
+    roleTitle:"Discovery Internship (search \"Discovery\" — do NOT apply to the general Summer Internship, which wants rising seniors)",
+    link:"https://www.deloitte.com/us/en/careers/students.html",
+    searchLink:"https://apply.deloitte.com/careers/SearchJobs/discovery",
+    angle:"Confirmed CMU IS sophomore track (BTA + Strategy roles, summer 2025). Discovery is the sophomore door; the general internship is not.",
+    eligNote:"Recruiting for the summer 2027 Discovery cohort reportedly ended May 1, 2026 — before this tracker was built, which is why the old \"opens Aug 2026\" date was wrong. Worth one confirmation email to a Deloitte campus recruiter before writing 2027 off, but plan around the summer 2028 cycle, which should post fall/winter 2026–27." },
   { id:"ps", org:"PublicSource", role:"Audience engagement and analytics intern",
     tier:2, cats:["civic","local"], loc:"Pittsburgh, PA", comp:"Varies", dur:"Summer",
     openDate:"2027-02-01", appWin:"Feb 2027", dl:"~Mar 2027",
@@ -119,23 +147,33 @@ const OPPS = [
     link:"https://www.panoramaed.com/about/careers",
     angle:"Builds K-12 data analytics tools for 2,000+ districts, 15M students. IS + data skills directly applicable; LitCorps is the right mission-level frame.",
     urgent:true },
-  { id:"msexplore", org:"Microsoft Explore Program", role:"Rotational intern — PM, SWE, and design in one summer",
-    tier:2, cats:["local","fellowship"], loc:"Redmond, WA (in-person)", comp:"Competitive", dur:"Summer, 3 rotations",
-    openDate:"2026-08-01", appWin:"Aug 2026", dl:"Rolling, ~mid-Oct 2026",
-    link:"https://careers.microsoft.com/v2/global/en/universityinternship",
-    angle:"Eligibility is 1st/2nd-year status the term before the internship — you'll be a sophomore in spring 2027, so you fit exactly. Three rotations (PM, SWE, design) in one summer is unusually broad exposure.",
-    eligNote:"Officially aimed at CS/engineering majors with intro CS + one semester of calculus. IS has real technical rigor (Flask/SQL, formal logic, R) — defensible stretch, especially for PM/design rotations." },
+  { id:"msexplore", org:"Microsoft Explore Program", role:"Explore Microsoft — Second Year Undergraduate (PM + SWE, 12 weeks)",
+    tier:2, cats:["local","fellowship"], loc:"Redmond, WA and Atlanta, GA (in-person)", comp:"~$34/hr + housing or $7–10K stipend", dur:"12 weeks (US)",
+    openDate:"2026-09-15", appWin:"~Sept–Oct 2026", dl:"Rolling once open",
+    conf:"estimate", checked:"2026-08-13",
+    roleTitle:"Explore Microsoft — SECOND year undergraduate application (there is a separate first-year application; do not apply to both)",
+    link:"https://careers.microsoft.com/v2/global/en/exploremicrosoft",
+    searchLink:"https://careers.microsoft.com/v2/global/en/exploremicrosoft",
+    angle:"Two disciplines in one summer (Program Manager and Software Engineer) is unusually broad exposure for a sophomore. Housing is covered outright or via a $7–10K stipend, so Redmond is affordable.",
+    eligNote:"NOT OPEN as of Aug 13, 2026 — this was the entry with the wrong date. Microsoft's Explore page currently lists only unrelated full-time roles; no Explore intern posting exists yet. Two other corrections: it is 2 rotations (PM + SWE), not 3, and there is no design rotation. Requirements are Intro to CS or equivalent plus one semester of calculus — no CS major needed, so IS qualifies, but make sure you have both courses on the transcript before applying." },
   { id:"friedmantrek", org:"CMU Friedman Trek (CMIST)", role:"5-day DC career exploration trek — not an internship, but fully funded",
     tier:2, cats:["civic","local"], loc:"Washington, DC", comp:"Fully funded (travel, hotel, activities)", dur:"5 days (Mar 8-12, 2027)",
-    openDate:"2026-08-19", appWin:"Aug 19, 2026", dl:"Nov 1, 2026",
+    openDate:"2026-08-19", appWin:"Aug 19 – Nov 1, 2026", dl:"Nov 1, 2026",
+    conf:"confirmed", checked:"2026-08-13",
+    roleTitle:"Friedman Trek application (CMIST) — contact Emily Half, ehalf@andrew.cmu.edu",
     link:"https://www.cmu.edu/cmist/washington-center/friedman-trek/index.html",
-    angle:"Not a job — a fully funded 5-day DC trip built specifically for first-years and sophomores to meet CMU alumni across government, policy, and nonprofits. Directly seeds the network you'd want for Coding it Forward, the Google Policy Fellowship, or a Friedman-funded Hill internship. Zero cost, low effort relative to payoff." },
+    searchLink:"https://www.cmu.edu/cmist/washington-center/index.html",
+    angle:"Not a job — a fully funded 5-day DC trip built specifically for first-years and sophomores to meet CMU alumni across government, policy, and nonprofits. Directly seeds the network you'd want for Coding it Forward, the Google Policy Fellowship, or a Friedman-funded Hill internship. Chartered bus, double-occupancy hotel, unlimited Metro pass, all covered. Zero cost, low effort relative to payoff.",
+    eligNote:"Confirmed against the CMIST page on Aug 13, 2026 — this one's dates were already correct. Trek runs Mar 8–12, 2027 (spring break). Decisions land before Thanksgiving and you must commit by Dec 14, 2026. Open to any major on the Pittsburgh campus. Single rooms are not available." },
   { id:"friedmanfellowship", org:"CMIST Friedman Fellowship", role:"Funding for an unpaid/low-paid DC policy internship — $5,000 stipend + free Metro pass",
     tier:2, cats:["civic","fellowship","local"], loc:"Washington, DC (you source the internship)", comp:"$5,000 stipend + UPASS", dur:"8-12 weeks",
-    openDate:"2026-11-01", appWin:"~Nov 2026 - Jan 2027", dl:"~Feb 2027 (based on 2026 cycle)",
+    openDate:"2026-11-01", appWin:"~Nov 2026 – Jan 2027", dl:"~Feb 2, 2027",
+    conf:"estimate", checked:"2026-08-13",
+    roleTitle:"Friedman Fellowship online application — contact Ashley Barnes, ashleyba@andrew.cmu.edu",
     link:"https://www.cmu.edu/cmist/washington-center/summer-internship-support/index.html",
-    angle:"This is what makes an otherwise-unpaid federal or nonprofit DC internship financially viable. Pair it with something like the Google Public Policy Fellowship or a direct Hill/agency application — CMIST staff helps you find and apply. Open to any CMU undergrad, no major restriction.",
-    eligNote:"The parallel Gow Political Internship Fund requires Western Pennsylvania residency, which likely rules it out for you. Friedman Fellowship has no such geographic restriction — that's the one to pursue." },
+    searchLink:"https://www.cmu.edu/cmist/washington-center/index.html",
+    angle:"This is what makes an otherwise-unpaid federal or nonprofit DC internship financially viable. Pair it with the Google Public Policy Fellowship or a direct Hill/agency application — CMIST staff helps you find and apply. Open to any CMU undergrad, no major restriction. You do NOT need a confirmed internship to apply.",
+    eligNote:"Date is an estimate: the 2026 cycle closed Feb 2, 2026, so ~Feb 2027 is the working assumption, not a published date. Two things to plan around — you need a CMU faculty letter of recommendation emailed to cmuwsp@andrew.cmu.edu, so ask by December; and the internship itself must be confirmed by roughly May 1 or your slot goes to an alternate. The parallel Gow fund requires Western Pennsylvania residency, which rules it out for you." },
   { id:"aspen", org:"Aspen Institute", role:"Summer Internship Program — policy, communications, or program support",
     tier:2, cats:["civic","fellowship"], loc:"Washington, DC / New York, NY / Aspen, CO", comp:"Paid", dur:"10-12 weeks",
     openDate:"2027-01-15", appWin:"~Jan 2027", dl:"Rolling by department",
@@ -143,30 +181,49 @@ const OPPS = [
     angle:"Real, paid policy internships across dozens of programs — the Congressional Program specifically places interns on bipartisan policy work in the Capitol. Broad enough that IS + P&M fits multiple tracks without needing a poli-sci pedigree." },
   { id:"tfas", org:"The Fund for American Studies (TFAS)", role:"DC Academic Internship Program — Public Policy & Economics track",
     tier:2, cats:["civic","fellowship"], loc:"Washington, DC", comp:"Guaranteed placement + furnished housing + academic credit (tuition/housing cost offset by scholarships)", dur:"8 weeks (June-July)",
-    openDate:"2026-12-05", appWin:"Rolling — early scholarship deadline ~Dec 5, 2026", dl:"Rolling, priority for Dec deadline",
-    link:"https://www.dcinternships.org/",
-    angle:"Most students attend after sophomore or junior year, open to all majors. Bundles a guaranteed DC internship placement with housing and GMU academic credit — removes the two hardest parts of a DC summer (finding a placement, finding housing). Pair with the Friedman Fellowship: TFAS covers placement/housing, Friedman can help offset what TFAS scholarships don't." },
+    openDate:"2026-08-01", appWin:"Open now — rolling admissions", dl:"Early Dec 5 · Priority Feb 8 · Final Mar 12",
+    conf:"confirmed", checked:"2026-08-13",
+    roleTitle:"D.C. Academic Internship Program — Public Policy & Economics track (summer.apply.dcinternships.org)",
+    link:"https://www.dcinternships.org/admissions/",
+    searchLink:"https://summer.apply.dcinternships.org/",
+    angle:"Most students attend after sophomore or junior year, open to all majors. Bundles a guaranteed DC internship placement with housing and academic credit — removes the two hardest parts of a DC summer. Pair with the Friedman Fellowship: TFAS covers placement and housing, Friedman offsets what TFAS scholarships don't.",
+    eligNote:"Summer 2027 program runs June 2 – July 31, 2027. Three deadlines, and the first one matters most: full merit scholarships are awarded on a rolling basis starting at the Dec 5 early deadline, so applying at the Feb or Mar deadline means competing for what's left. TFAS awards full or partial aid to about 85% of attendees." },
   { id:"bloombergphil", org:"Bloomberg Philanthropies", role:"Summer Internship Program — Government Innovation track",
     tier:2, cats:["civic","fellowship"], loc:"New York, NY", comp:"Paid", dur:"10 weeks",
-    openDate:"2026-09-22", appWin:"Applications open ~Sept 22, 2026 — rolling interviews", dl:"Rolling, early submission strongly encouraged",
-    link:"https://www.bloomberg.org/careers/",
-    angle:"Government Innovation is a direct hit on your civic-systems angle — philanthropy funding city-level government modernization is exactly the LendingLens/PublicSource lane, just at national scale and a stronger brand name. Open to underclassmen; apply early given rolling interviews." },
+    openDate:"2026-10-01", appWin:"~Oct 2026", dl:"Rolling, early submission strongly encouraged",
+    conf:"estimate", checked:"2026-08-13",
+    roleTitle:"Bloomberg Philanthropies Summer Internship — Government Innovation",
+    link:"https://job-boards.greenhouse.io/bloombergdotorg",
+    searchLink:"https://job-boards.greenhouse.io/bloombergdotorg",
+    angle:"Government Innovation is a direct hit on your civic-systems angle — philanthropy funding city-level government modernization is exactly the LendingLens/PublicSource lane, at national scale with a stronger brand name.",
+    eligNote:"Link corrected: postings live on the Greenhouse board (job-boards.greenhouse.io/bloombergdotorg), not the bloomberg.org careers page the old entry pointed at. Eligibility is rising juniors and seniors — you'd be a rising junior in summer 2027, so you qualify, but only just. Nothing for 2027 was posted as of Aug 13, 2026; the Oct estimate is from the 2026 cycle." },
   { id:"nyfedsoph", org:"Federal Reserve Bank of New York", role:"Sophomore Career Exploration Program",
     tier:2, cats:["civic","fintech","fellowship"], loc:"New York, NY", comp:"Paid", dur:"Summer",
-    openDate:"2026-09-01", appWin:"Check back Sept 2026 for 2027 cycle", dl:"TBD — based on prior cycles, opens fall",
+    openDate:"2026-09-01", appWin:"Details posted Sept 2026", dl:"~Sept 15, 2026 (prior cycles)",
+    conf:"estimate", checked:"2026-08-13",
+    roleTitle:"Sophomore Career Exploration Program (also posts as \"2027 Summer Intern — [Group] — Sophomore\")",
     link:"https://www.newyorkfed.org/careers/student-programs-and-internships/sophomore-career-exploration-program",
-    angle:"Built specifically for sophomores — cohort model, mentor, project-based work. Community development and bank supervision teams do HMDA-style equity analysis directly relevant to LendingLens. A cleaner sophomore-year fit than the Philadelphia Fed listing, which reads more junior/senior." },
+    searchLink:"https://www.newyorkfed.org/careers/student-programs-and-internships",
+    angle:"Built specifically for sophomores — cohort model, mentor, project-based work. Community development and bank supervision teams do HMDA-style equity analysis directly relevant to LendingLens. A cleaner sophomore-year fit than the Philadelphia Fed listing, which reads more junior/senior.",
+    eligNote:"Tight and easy to miss: the NY Fed says 2027 details post in September 2026, and prior cycles closed around September 15 — so the window may be about two weeks wide. Have the resume finished by Labor Day rather than waiting for the posting." },
   { id:"mckinseyssba", org:"McKinsey & Company", role:"Sophomore Summer Business Analyst (SSBA) Program",
     tier:2, cats:["consulting"], loc:"Various North America offices", comp:"Competitive", dur:"~10 weeks",
-    openDate:"2026-08-01", appWin:"Aug 2026", dl:"Rolling fall 2026",
+    openDate:"2026-08-01", appWin:"~July–Aug 2026", dl:"~Early Oct 2026",
+    conf:"estimate", checked:"2026-08-13",
+    roleTitle:"Sophomore Summer Business Analyst (SSBA) — confirm the program is running for this cycle before investing time",
     link:"https://www.mckinsey.com/careers/students/undergraduate-degree",
-    angle:"A distinct, formal 10-week sophomore internship — not the 2-day diversity summit already listed. Real client project work in teams of 3-5. Apply to this AND the summit; they're separate pipelines.",
-    eligNote:"Historically framed around historically underrepresented groups in management consulting (Black, Hispanic, Latino, Indigenous North American students). Confirm current eligibility language before applying." },
+    searchLink:"https://www.mckinsey.com/careers/search-jobs?query=sophomore",
+    angle:"A distinct, formal ~10-week sophomore internship — not the 2-day summit listed separately. Real client project work in teams of 3-5. Separate pipelines, so apply to both.",
+    eligNote:"Verify before relying on this one. Reporting indicates McKinsey cancelled SSBA for at least one recent graduating class, and it's unclear from public sources whether the summer 2027 cycle is running. Typical window is July to early October. Also historically framed around underrepresented groups in consulting — check current eligibility language on the posting itself." },
   { id:"eyparthenon", org:"EY-Parthenon", role:"Emerging Leaders Program — strategy consulting",
     tier:2, cats:["consulting"], loc:"Various", comp:"Competitive", dur:"8 weeks",
-    openDate:"2026-08-01", appWin:"Aug 2026", dl:"Rolling fall 2026",
+    openDate:"2026-08-01", appWin:"Aug–Sept 2026", dl:"Rolling fall 2026",
+    conf:"estimate", checked:"2026-08-13",
+    roleTitle:"EY-Parthenon Emerging Leaders Program (sophomore internship) — not the general EY internship",
     link:"https://www.ey.com/en_us/careers/students",
-    angle:"An 8-week sophomore-specific strategy consulting program, distinct from the general EY Technology Consulting listing already here. Strategy/policy framing may be a better fit than pure tech delivery if the P&M side is what draws you." },
+    searchLink:"https://careers.ey.com/ey/search/?q=Emerging+Leaders",
+    angle:"An 8-week sophomore-specific strategy consulting program, distinct from the general EY Technology Consulting listing. Strategy and policy framing may fit better than pure tech delivery if the P&M side is what draws you. EY-Parthenon is well regarded for corporate strategy and transaction advisory.",
+    eligNote:"This is the strongest sophomore-facing consulting entry on the list alongside Capital One. Opens Aug–Sept 2026 on a rolling basis, so the submission date is the real filter — get in during the first two weeks." },
   // ── TIER 3 ──────────────────────────────────────────────────────────────
   { id:"cl", org:"Carnegie Learning", role:"Research or product role (direct outreach)",
     tier:3, cats:["edtech","local"], loc:"Pittsburgh, PA", comp:"TBD", dur:"Summer",
@@ -198,34 +255,54 @@ const OPPS = [
     urgent:true },
   { id:"comcast", org:"Comcast / NBCUniversal", role:"Early career — tech, media, or business dev",
     tier:3, cats:["media","local"], loc:"Philadelphia, PA", comp:"Competitive", dur:"Summer",
-    openDate:"2026-08-01", appWin:"Aug 2026", dl:"Rolling fall 2026",
+    openDate:"2026-11-15", appWin:"~Mid-Nov 2026", dl:"Rolling into early 2027",
+    conf:"estimate", checked:"2026-08-13",
+    roleTitle:"Summer 2027 Internship — Comcast or NBCUniversal (10–11 weeks, paid)",
     link:"https://jobs.comcast.com/early-career",
-    angle:"Philadelphia HQ = local angle. NBCUniversal media connection relevant to music/media background. Confirmed CMU IS sophomore track (2025)." },
+    searchLink:"https://www.nbcunicareers.com/mediatech/internship-program",
+    angle:"Philadelphia HQ = local angle. NBCUniversal media connection relevant to your music/media background. Confirmed CMU IS sophomore track (2025).",
+    eligNote:"Date corrected: summer 2027 applications open around mid-November 2026, not August — the old Aug 1 date was roughly three months early. Eligibility is sophomore standing or above with at least 30 credits, so you qualify. US work authorization required with no visa sponsorship." },
   { id:"mckinsey", org:"McKinsey and Company", role:"Diversity summits then Business Analyst internship",
     tier:3, cats:["consulting"], loc:"Various", comp:"Competitive", dur:"Summit: 2 days · Internship: 10 wks",
     openDate:"2026-08-01", appWin:"Aug 2026 (summits rolling)", dl:"~Oct 2026 for internship",
     link:"https://www.mckinsey.com/careers/students/undergraduate-degree",
     angle:"Stretch. Enter through diversity summits first. Analytical rigor from game theory + IS coursework is relevant." },
-  { id:"accenture", org:"Accenture", role:"Technology or strategy consulting intern",
+  { id:"accenture", org:"Accenture", role:"Innovation Challenge (sophomore entry point) → Technology/Strategy Intern",
     tier:3, cats:["consulting","local"], loc:"Various (Philly-area offices)", comp:"Competitive", dur:"10-12 weeks",
-    openDate:"2026-08-01", appWin:"Aug 2026", dl:"Rolling fall 2026",
+    openDate:"2026-10-01", appWin:"~Oct–Nov 2026", dl:"~Dec 2026 for Innovation Challenge",
+    conf:"estimate", checked:"2026-08-13",
+    roleTitle:"Accenture Innovation Challenge (sophomore-eligible). The general Technology Intern posting is NOT the sophomore route.",
     link:"https://www.accenture.com/us-en/careers/life-at-accenture/internships-students",
-    angle:"Confirmed CMU IS sophomore track (2025). Philly offices. More accessible than McKinsey." },
-  { id:"pwc", org:"PwC", role:"Technology Consulting Intern",
-    tier:3, cats:["consulting"], loc:"Various (DC, Philly area)", comp:"Competitive", dur:"10 weeks",
-    openDate:"2026-08-01", appWin:"Aug 2026", dl:"Rolling fall 2026",
+    searchLink:"https://www.accenture.com/us-en/careers/jobsearch?jk=intern&sb=1",
+    angle:"Confirmed CMU IS sophomore track (2025). Philly offices. More accessible than McKinsey. The Innovation Challenge is a team design-thinking competition that feeds the internship pipeline.",
+    eligNote:"Same trap as the Amex entry: Accenture's headline internship postings target rising seniors. Innovation Challenge is the sophomore-facing program and it runs on a later timeline — applications around Dec 2026, not Aug." },
+  { id:"pwc", org:"PwC", role:"PwC Start (sophomore program) → Technology Consulting Intern",
+    tier:3, cats:["consulting"], loc:"Various (DC, Philly area)", comp:"Competitive", dur:"Start: 6-8 weeks",
+    openDate:"2026-08-01", appWin:"Aug–Sept 2026", dl:"Rolling, ~Aug for Start",
+    conf:"estimate", checked:"2026-08-13",
+    roleTitle:"PwC Start Internship (sophomore). Career Preview is a separate 3-day Orlando event with a ~March deadline.",
     link:"https://www.pwc.com/us/en/careers/campus.html",
-    angle:"Confirmed CMU IS sophomore track (2025). DC office connects to civic/policy interest." },
-  { id:"ey", org:"EY", role:"Technology Consulting Intern",
+    searchLink:"https://jobs.us.pwc.com/search-jobs/intern/932/1",
+    angle:"Confirmed CMU IS sophomore track (2025). DC office connects to your civic/policy interest.",
+    eligNote:"Apply to Start, not the general Technology Consulting Intern posting — the latter recruits rising seniors graduating Dec 2027–June 2028. Big 4 advisory opens Aug–Sept 2026 and reviews on a rolling basis, so submission date is the real filter; aim for the first two weeks of the window." },
+  { id:"ey", org:"EY", role:"Technology Consulting Intern (see EY-Parthenon Emerging Leaders for the sophomore route)",
     tier:3, cats:["consulting"], loc:"Various", comp:"Competitive", dur:"10 weeks",
-    openDate:"2026-08-01", appWin:"Aug 2026", dl:"Rolling fall 2026",
+    openDate:"2026-08-01", appWin:"Aug–Sept 2026", dl:"Rolling fall 2026",
+    conf:"estimate", checked:"2026-08-13",
+    roleTitle:"EY Technology Consulting Intern — Summer 2027 (verify the graduation window before submitting)",
     link:"https://www.ey.com/en_us/careers/students",
-    angle:"Confirmed CMU IS sophomore track (2025). Technology consulting directly relevant to IS." },
-  { id:"kpmg", org:"KPMG", role:"Federal Technology Enablement or Tech Consulting Intern",
-    tier:3, cats:["consulting","civic"], loc:"Various (DC/Tyson, VA area)", comp:"Competitive", dur:"10 weeks",
-    openDate:"2026-08-01", appWin:"Aug 2026", dl:"Rolling fall 2026",
-    link:"https://home.kpmg/us/en/home/careers/students-and-graduates.html",
-    angle:"Confirmed CMU IS sophomore track (2025). Federal Technology Enablement track bridges consulting + civic/gov interests." },
+    searchLink:"https://careers.ey.com/ey/search/?q=intern&locationsearch=United+States",
+    angle:"Confirmed CMU IS sophomore track (2025). Technology consulting directly relevant to IS.",
+    eligNote:"EY's general tech consulting internship skews toward rising seniors. The sophomore-specific door at EY is the EY-Parthenon Emerging Leaders Program, already listed separately in Tier 2 — treat that as the primary application and this as the backup." },
+  { id:"kpmg", org:"KPMG", role:"KPMG Rise / Embark Scholars (sophomore) → Federal Technology Enablement Intern",
+    tier:3, cats:["consulting","civic"], loc:"Various (DC/Tysons, VA area)", comp:"Competitive", dur:"Embark: 8 weeks",
+    openDate:"2026-08-01", appWin:"Aug–Sept 2026", dl:"Rolling",
+    conf:"estimate", checked:"2026-08-13",
+    roleTitle:"KPMG Rise Leadership Conference (freshmen/sophomores) and KPMG Embark Scholars (8-week rotational internship)",
+    link:"https://www.kpmguscareers.com/students/",
+    searchLink:"https://www.kpmguscareers.com/job-search/?keyword=intern",
+    angle:"Confirmed CMU IS sophomore track (2025). Federal Technology Enablement bridges consulting and your civic/gov interest.",
+    eligNote:"Rise is a conference at KPMG's Orlando Lakehouse for freshmen and sophomores; Embark Scholars is the actual 8-week internship with rotations across Audit, Tax, and Advisory, reviewed on a rolling basis. Both are underclassman-facing — the general Advisory internship is not." },
   { id:"workiva", org:"Workiva", role:"Product Management Intern",
     tier:3, cats:["tech"], loc:"Ames, Iowa (remote possible)", comp:"Competitive", dur:"10-12 weeks",
     openDate:"2026-09-01", appWin:"Sept 2026", dl:"Rolling fall 2026",
@@ -236,11 +313,15 @@ const OPPS = [
     openDate:"2026-09-01", appWin:"Sept–Oct 2026", dl:"Rolling fall 2026",
     link:"https://www.ixl.com/company/jobs",
     angle:"Already on your cold outreach list. Personalized learning platform for 15M+ K-12 students. Look for a PM or data analyst posting alongside the SWE roles." },
-  { id:"amex", org:"American Express", role:"Analytics, product, or sophomore finance intern",
-    tier:3, cats:["fintech"], loc:"Various (NYC, Phoenix)", comp:"Competitive", dur:"10 weeks",
-    openDate:"2026-08-01", appWin:"Aug 2026", dl:"~Sept 30, 2026",
-    link:"https://www.americanexpress.com/en-us/careers/student-programs/us/",
-    angle:"Dedicated sophomore finance internship track plus broader analytics/product tracks. Useful breadth play. Opens August — set a reminder." },
+  { id:"amex", org:"American Express", role:"Campus Undergraduate Summer Internship Program — 2027 SOPHOMORE FINANCE",
+    tier:3, cats:["fintech"], loc:"New York, NY (on-site)", comp:"Paid", dur:"Summer 2027",
+    openDate:"2026-08-01", appWin:"OPEN NOW — posting is live", dl:"Rolling until filled",
+    conf:"confirmed", checked:"2026-08-13",
+    roleTitle:"Campus Undergraduate Summer Internship Program - 2027 Sophomore Finance, Finance - New York, NY",
+    link:"https://careers.americanexpress.com/en/sites/CX_1/job/26011904/",
+    searchLink:"https://careers.americanexpress.com/en/search-jobs/Campus%20Undergraduate%20Summer%20Internship%20Program%202027/",
+    angle:"General Finance rotation across Corporate Planning & Analysis, Global Commercial Services Finance, US Consumer Services Finance, Global Merchant & Network Finance, Controllership, and Global Treasury. LendingLens gives you a credit/risk story that most finance applicants can't tell.",
+    eligNote:"THIS IS THE ENTRY THAT SENT YOU TO THE WRONG ROLE. Amex posts ~27 near-identically-named internships and they split by graduation year. Sophomore Finance requires graduation Dec 2028–June 2029 — that's you, Class of 2029. Every other 2027 Campus posting (Strategy & Analytics, Product Management, Marketing, Credit & Fraud Risk) requires graduation Dec 2027–June 2028, i.e. rising seniors, and you are not eligible for any of them. Before submitting, open the posting and confirm the graduation window says 2028–2029. If it says 2027–2028, close the tab — wrong role." },
   { id:"amphil", org:"AmPhil", role:"Development Intern — nonprofit fundraising & operations support",
     tier:3, cats:["civic"], loc:"Various (multiple US offices)", comp:"Paid", dur:"Summer",
     openDate:"2026-09-01", appWin:"Fall 2026", dl:"Rolling",
@@ -313,17 +394,36 @@ function daysUntil(d) {
   const t = new Date(); t.setHours(0,0,0,0);
   return Math.ceil((new Date(d) - t) / 86400000);
 }
+/* Date confidence. Anything never explicitly verified defaults to "estimate" rather than
+   silently reading as fact — that default is the whole point of this field. */
+function confOf(o) { return o.conf || "estimate"; }
+
+const CONF_META = {
+  confirmed: { label:"confirmed", bg:"#E1F5EE", fg:"#085041",
+               tip:"Read off the employer's own page on the date shown." },
+  estimate:  { label:"estimate",  bg:"#FAEEDA", fg:"#633806",
+               tip:"Projected from prior cycles, not published by the employer. Treat the month as a hint and the day as meaningless." },
+  closed:    { label:"closed",    bg:"#FCEBEB", fg:"#A32D2D",
+               tip:"This cycle's application window has already passed." },
+};
+
 function countdownBadge(o) {
+  const c = confOf(o);
+  if (c === "closed") return { label:"closed", bg:"#FCEBEB", fg:"#A32D2D" };
   if (o.urgent && !o.openDate) return { label:"outreach now", bg:"#FAEEDA", fg:"#633806" };
   const d = daysUntil(o.openDate);
+  const est = c === "estimate";
+  // "~" prefix on every estimated countdown, so a hard number never implies a hard date.
+  const p = est ? "~" : "";
   if (d === null) return { label: o.appWin || "—", bg:"#F1EFE8", fg:"#6b6b67" };
-  if (d <= 0)  return { label:"open now", bg:"#E1F5EE", fg:"#085041" };
-  if (d <= 14) return { label:`${d}d`, bg:"#FCEBEB", fg:"#A32D2D" };
-  if (d <= 45) return { label:`${d}d`, bg:"#FAEEDA", fg:"#633806" };
-  if (d <= 90) return { label:`${d}d`, bg:"#E6F1FB", fg:"#0C447C" };
+  if (d <= 0)  return { label: est ? "~open" : "open now", bg:"#E1F5EE", fg:"#085041" };
+  if (d <= 14) return { label:`${p}${d}d`, bg:"#FCEBEB", fg:"#A32D2D" };
+  if (d <= 45) return { label:`${p}${d}d`, bg:"#FAEEDA", fg:"#633806" };
+  if (d <= 90) return { label:`${p}${d}d`, bg:"#E6F1FB", fg:"#0C447C" };
   return { label:`~${Math.round(d/30.5)}mo`, bg:"#F1EFE8", fg:"#8c8c88" };
 }
 function isActNow(o) {
+  if (confOf(o) === "closed") return false;
   if (o.urgent) return true;
   const d = daysUntil(o.openDate);
   return d !== null && d <= 90;
@@ -350,7 +450,7 @@ const ALL_CAT_OPTIONS = ["edtech","civic","consulting","local","fellowship","fin
 function AddForm({ onAdd, onCancel }) {
   const [f, setF] = useState({
     org:"", role:"", tier:2, cats:[], loc:"", comp:"", dur:"",
-    openDate:"", appWin:"", dl:"", link:"", angle:"", urgent:false,
+    openDate:"", appWin:"", dl:"", link:"", searchLink:"", roleTitle:"", conf:"estimate", angle:"", urgent:false,
   });
   const set = (k, v) => setF(prev => ({ ...prev, [k]: v }));
   const toggleCat = (c) => setF(prev => ({
@@ -368,7 +468,9 @@ function AddForm({ onAdd, onCancel }) {
       openDate: f.openDate || null,
       appWin: f.appWin.trim() || (f.openDate ? new Date(f.openDate).toLocaleDateString("en-US",{month:"short",year:"numeric"}) : "TBD"),
       dl: f.dl.trim() || "TBD",
-      link: f.link.trim(), angle: f.angle.trim(), urgent: f.urgent, custom: true,
+      link: f.link.trim(), searchLink: f.searchLink.trim(), roleTitle: f.roleTitle.trim(),
+      conf: f.conf, checked: new Date().toISOString().slice(0,10),
+      angle: f.angle.trim(), urgent: f.urgent, custom: true,
     });
   };
 
@@ -409,7 +511,14 @@ function AddForm({ onAdd, onCancel }) {
         }, b.label);
       })
     )),
-    field("Link", h("input", { style:inputStyle, value:f.link, onChange:e=>set("link", e.target.value), placeholder:"https://..." })),
+    field("How solid is that date?", h("select", { style:inputStyle, value:f.conf, onChange:e=>set("conf", e.target.value) },
+      h("option", { value:"confirmed" }, "Confirmed — I read it on the employer's page today"),
+      h("option", { value:"estimate" }, "Estimate — guessed from prior cycles"),
+      h("option", { value:"closed" }, "Closed — this cycle's window has passed"),
+    )),
+    field("Exact posting title to apply to", h("input", { style:inputStyle, value:f.roleTitle, onChange:e=>set("roleTitle", e.target.value), placeholder:"Paste the posting's exact title + any eligibility gotcha" })),
+    field("Direct link (specific posting or program page)", h("input", { style:inputStyle, value:f.link, onChange:e=>set("link", e.target.value), placeholder:"https://..." })),
+    field("Fallback search link (survives posting rotation)", h("input", { style:inputStyle, value:f.searchLink, onChange:e=>set("searchLink", e.target.value), placeholder:"https://... their job search, pre-filtered" })),
     field("Your angle / notes", h("textarea", { style:{...inputStyle, minHeight:"60px", resize:"vertical"}, value:f.angle, onChange:e=>set("angle", e.target.value), placeholder:"Why this is worth pursuing, contacts, next steps..." })),
     h("label", { style:{ fontSize:"12px", color:"#6b6b67", display:"flex", alignItems:"center", gap:"6px", marginBottom:"12px", cursor:"pointer" } },
       h("input", { type:"checkbox", checked:f.urgent, onChange:e=>set("urgent", e.target.checked) }),
@@ -499,12 +608,37 @@ function App() {
         const d = JSON.parse(ev.target.result);
         if (!confirm("This will replace all current tracker data (statuses, notes, and your added opportunities) with the contents of this backup file. Continue?")) return;
         const restored = { statuses: d.statuses||{}, notes: d.notes||{}, customOpps: d.customOpps||[] };
+
+        // Report exactly what landed. A backup saved against an older version of this file
+        // could reference an opportunity id that has since been renamed or removed — without
+        // this check that status would vanish silently, which is the one failure mode that
+        // would actually cost you something.
+        const knownIds = new Set([ ...OPPS.map(o=>o.id), ...restored.customOpps.map(o=>o.id) ]);
+        const statusIds = Object.keys(restored.statuses);
+        const noteIds = Object.keys(restored.notes).filter(k => (restored.notes[k]||"").trim());
+        const orphans = [ ...new Set([...statusIds, ...noteIds]) ].filter(k => !knownIds.has(k));
+
         ref.current = restored;
         setStatuses({ ...restored.statuses });
         setNotes({ ...restored.notes });
         setCustomOpps([ ...restored.customOpps ]);
-        persist();
-        setMsg("restored from backup");
+        // saveData directly rather than persist(): persist() flashes "saved" and clears the
+        // message after 1.5s, which would wipe the restore summary before it could be read.
+        const saveOk = saveData(ref.current);
+        if (!saveOk) { alert("Restored into this session, but the browser refused to save it. Check your storage settings, or the data will be gone when you close the tab."); }
+
+        const summary = `Restored ${statusIds.length - orphans.filter(o=>statusIds.includes(o)).length} statuses, `
+          + `${noteIds.length - orphans.filter(o=>noteIds.includes(o)).length} notes, `
+          + `and ${restored.customOpps.length} of your own opportunities.`;
+        if (orphans.length) {
+          alert(summary + `\n\nHeads up: ${orphans.length} saved entr${orphans.length===1?"y":"ies"} `
+            + `no longer match anything in this tracker, so ${orphans.length===1?"it was":"they were"} not shown:\n\n`
+            + orphans.join("\n")
+            + `\n\nYour backup file still contains them. This usually means the tracker's built-in list was edited after that backup was taken.`);
+        }
+        setMsg(summary);
+        setTimeout(() => setMsg(""), 6000);
+        return;
       } catch (err) {
         alert("That file doesn't look like a valid backup — couldn't parse it as JSON.");
       }
@@ -515,12 +649,14 @@ function App() {
 
   const csvEscape = (v) => `"${String(v==null?"":v).replace(/"/g,'""')}"`;
   const exportCSV = () => {
-    const header = ["Organization","Role","Tier","Status","Categories","Location","Compensation","Duration","Opens","Deadline","Link","Angle / Notes (built-in)","Your Notes"];
+    const header = ["Organization","Role","Tier","Status","Categories","Location","Compensation","Duration","Opens","Deadline","Date confidence","Last checked","Exact posting title","Link","Search link","Eligibility warning","Angle / Notes (built-in)","Your Notes"];
     const lines = [header.map(csvEscape).join(",")];
     allOpps.forEach(o => {
       lines.push([
         o.org, o.role, o.tier, statuses[o.id]||"Not started", o.cats.join("; "),
-        o.loc, o.comp, o.dur, o.appWin, o.dl, o.link, o.angle||"", notes[o.id]||"",
+        o.loc, o.comp, o.dur, o.appWin, o.dl,
+        confOf(o), o.checked||"never verified", o.roleTitle||"",
+        o.link, o.searchLink||"", o.eligNote||"", o.angle||"", notes[o.id]||"",
       ].map(csvEscape).join(","));
     });
     const stamp = new Date().toISOString().slice(0,10);
@@ -553,6 +689,19 @@ function App() {
     h("div", { style:{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:"0.75rem", flexWrap:"wrap", gap:"4px" } },
       h("span", { style:{ fontSize:"16px", fontWeight:"700", color:"#1c1c1a" } }, "Summer 2027 Internship Tracker"),
       h("span", { style:{ fontSize:"11px", color:"#8c8c88" } }, "Today: " + today),
+    ),
+
+    h("div", { style:{ background:"#f4f3ef", border:"1px solid #e0dfd9", borderLeft:"3px solid #BA7517", borderRadius:"8px", padding:"11px 13px", marginBottom:"1rem" } },
+      h("div", { style:{ fontSize:"12px", fontWeight:"700", color:"#1c1c1a", marginBottom:"5px" } }, "Dates and links were re-checked on Aug 13, 2026"),
+      h("div", { style:{ fontSize:"12px", color:"#6b6b67", lineHeight:"1.6" } },
+        "Every date now carries a ",
+        h("b", { style:{ fontWeight:"600" } }, "confirmed"), " or ", h("b", { style:{ fontWeight:"600" } }, "estimate"),
+        " label, visible when you open a card. Estimates are projections from prior cycles — the month is a hint, the day means nothing, and countdowns on them are prefixed with \"~\". Anything not explicitly re-checked defaults to estimate.",
+        h("br"), h("br"),
+        "Each card now also names the ",
+        h("b", { style:{ fontWeight:"600" } }, "exact posting title"),
+        " to apply to. Large employers list dozens of near-identical internships split by graduation year — matching that string is what prevents another wrong-role application. Read the eligibility warning (⚠) before applying to Amex, Deloitte, Microsoft, or any Big 4 firm.",
+      ),
     ),
 
     h("div", { style:{ display:"flex", flexWrap:"wrap", gap:"6px", marginBottom:"1rem" } },
@@ -634,9 +783,21 @@ function App() {
                 h("span", { style:{ fontSize:"12px", color:"#6b6b67", display:"flex", alignItems:"center", gap:"3px" } }, h(IClock,{size:11}), o.dur),
                 h("span", { style:{ fontSize:"12px", color:"#6b6b67", display:"flex", alignItems:"center", gap:"3px" } }, h(IDollar,{size:11}), o.comp),
               ),
-              h("div", { style:{ display:"flex", flexWrap:"wrap", gap:"12px", marginBottom:"10px" } },
+              h("div", { style:{ display:"flex", flexWrap:"wrap", alignItems:"center", gap:"12px", marginBottom:"6px" } },
                 h("span", { style:{ fontSize:"12px", color:"#6b6b67", display:"flex", alignItems:"center", gap:"3px" } }, h(ICal,{size:11}), h("b",{style:{fontWeight:"600"}},"Opens:")," ",o.appWin),
                 h("span", { style:{ fontSize:"12px", color:"#6b6b67", display:"flex", alignItems:"center", gap:"3px" } }, h(ICal,{size:11}), h("b",{style:{fontWeight:"600"}},"Deadline:")," ",o.dl),
+                (() => { const cm = CONF_META[confOf(o)]; return h("span", { title:cm.tip,
+                  style:{ fontSize:"10px", fontWeight:"700", padding:"1px 7px", borderRadius:"20px", background:cm.bg, color:cm.fg, letterSpacing:"0.03em", cursor:"help",
+                          border: confOf(o)==="estimate" ? "1px dashed "+cm.fg+"66" : "1px solid transparent" } }, cm.label); })(),
+              ),
+              h("div", { style:{ fontSize:"11px", color:"#8c8c88", marginBottom:"10px", lineHeight:"1.5" } },
+                CONF_META[confOf(o)].tip,
+                o.checked ? ` · Last checked ${o.checked}.` : " · Never verified against a live source.",
+              ),
+
+              o.roleTitle && h("div", { style:{ background:"#f4f3ef", border:"1px solid #e0dfd9", borderRadius:"6px", padding:"8px 10px", marginBottom:"10px" } },
+                h("div", { style:{ fontSize:"10px", fontWeight:"700", color:"#8c8c88", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:"3px" } }, "Exact posting to apply to"),
+                h("div", { style:{ fontSize:"12px", color:"#1c1c1a", lineHeight:"1.5", fontFamily:"ui-monospace, SFMono-Regular, Menlo, monospace" } }, o.roleTitle),
               ),
               h("div", { style:{ display:"flex", gap:"4px", flexWrap:"wrap", marginBottom:"10px" } },
                 o.cats.map(c => { const b = CB[c] || { bg:"#F1EFE8", fg:"#444", label:c }; return h("span", { key:c, style:{ fontSize:"11px", padding:"2px 8px", borderRadius:"20px", background:b.bg, color:b.fg, fontWeight:"500" } }, b.label); })
@@ -645,8 +806,16 @@ function App() {
                 h("div", { style:{ fontSize:"10px", fontWeight:"700", color:"#8c8c88", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:"4px" } }, "Your angle"),
                 h("div", { style:{ fontSize:"13px", color:"#1c1c1a", lineHeight:"1.6" } }, o.angle),
               ),
-              h("div", { style:{ marginBottom:"10px", display:"flex", justifyContent:"space-between", alignItems:"center" } },
-                o.link ? h("a", { href:o.link, target:"_blank", rel:"noopener noreferrer", style:{ fontSize:"12px", color:"#185FA5", textDecoration:"none", display:"inline-flex", alignItems:"center", gap:"4px" } }, h(ILink,{size:12,color:"#185FA5"}), "Careers page") : h("span"),
+              h("div", { style:{ marginBottom:"10px", display:"flex", justifyContent:"space-between", alignItems:"center", gap:"10px", flexWrap:"wrap" } },
+                h("span", { style:{ display:"inline-flex", alignItems:"center", gap:"14px", flexWrap:"wrap" } },
+                  o.link && h("a", { href:o.link, target:"_blank", rel:"noopener noreferrer",
+                    style:{ fontSize:"12px", fontWeight:"600", color:"#185FA5", textDecoration:"none", display:"inline-flex", alignItems:"center", gap:"4px" } },
+                    h(ILink,{size:12,color:"#185FA5"}), confOf(o)==="confirmed" ? "Go to posting" : "Program page"),
+                  o.searchLink && o.searchLink !== o.link && h("a", { href:o.searchLink, target:"_blank", rel:"noopener noreferrer",
+                    title:"Use this if the direct link is dead — postings rotate between cycles.",
+                    style:{ fontSize:"12px", color:"#6b6b67", textDecoration:"none", display:"inline-flex", alignItems:"center", gap:"4px" } },
+                    h(ILink,{size:12,color:"#6b6b67"}), "Search all postings"),
+                ),
                 o.custom && h("button", { onClick:()=>deleteOpp(o.id), style:{ fontSize:"11px", color:"#A32D2D", background:"transparent", border:"1px solid #f0c0c0", borderRadius:"20px", padding:"3px 10px", cursor:"pointer", display:"inline-flex", alignItems:"center", gap:"4px" } }, h(ITrash,{size:10,color:"#A32D2D"}), "Remove"),
               ),
               h("div", null,

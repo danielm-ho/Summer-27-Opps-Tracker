@@ -1049,6 +1049,287 @@ function saveData(data) {
 const ALL_CAT_OPTIONS = ["edtech","civic","consulting","local","fellowship","fintech","music","media","tech"];
 
 
+
+/* ============================================================
+   DATE VERIFICATION VIA CLAUDE
+   ------------------------------------------------------------
+   The dates in this file are the weakest thing in it. Most are projections from
+   prior cycles, and a projection that reads like a fact is exactly how you miss a
+   window. This module asks Claude to go read the employer's own page and report
+   back what it actually says.
+
+   Two paths, both of which end at the same review screen:
+
+   1. NO KEY (default). "Copy prompt" puts a fully-formed research prompt on your
+      clipboard. Paste it into a Claude chat with web search on, paste the JSON it
+      returns back into the box. Costs nothing beyond your existing subscription.
+
+   2. API KEY. Runs the same prompt through the Messages API with the server-side
+      web_search tool, so it happens in one click and can run across many rows.
+
+   NOTHING IS EVER APPLIED AUTOMATICALLY. Every result lands in a field-by-field
+   diff that you accept or reject. The model is a research assistant here, not an
+   authority — it can and will misread a stale page, and the whole point of the
+   confirmed/estimate distinction is lost if unreviewed model output can write to it.
+   ============================================================ */
+
+const KEY_STORE = "intern-tracker-anthropic-key";   // deliberately NOT part of the
+                                                    // tracker data object, so it can
+                                                    // never end up in a backup export
+const MODEL_STORE = "intern-tracker-model";
+const MODELS = [
+  { id:"claude-sonnet-5", label:"Sonnet 5 — good default" },
+  { id:"claude-opus-5",   label:"Opus 5 — slower, better at ambiguous pages" },
+  { id:"claude-haiku-4-5-20251001", label:"Haiku 4.5 — cheapest, misses nuance" },
+];
+
+function getKey()   { try { return localStorage.getItem(KEY_STORE) || ""; } catch(e){ return ""; } }
+function setKey(v)  { try { v ? localStorage.setItem(KEY_STORE, v) : localStorage.removeItem(KEY_STORE); } catch(e){} }
+function getModel() { try { return localStorage.getItem(MODEL_STORE) || MODELS[0].id; } catch(e){ return MODELS[0].id; } }
+function setModel(v){ try { localStorage.setItem(MODEL_STORE, v); } catch(e){} }
+
+/* The prompt does most of the work. Three things in it matter more than the rest:
+   the demand for a quote and a URL behind every date, the instruction to return
+   "unknown" rather than infer, and the explicit ranking of the employer's own
+   domain above aggregators — which is where the bad dates in this file came from. */
+function buildCheckPrompt(o) {
+  const today = new Date().toISOString().slice(0,10);
+  return `You are verifying one row in an internship application tracker. Today is ${today}.
+
+ROW UNDER REVIEW
+Organization: ${o.org}
+Role as recorded: ${o.role}
+Exact posting title recorded: ${o.roleTitle || "(none recorded)"}
+Link recorded: ${o.link || "(none)"}
+Fallback search link: ${o.searchLink || "(none)"}
+Currently recorded opens: ${o.appWin || "(none)"}${o.openDate ? " (sortable date " + o.openDate + ")" : ""}
+Currently recorded deadline: ${o.dl || "(none)"}
+Currently recorded confidence: ${confOf(o)}
+Last checked: ${o.checked || "never"}
+
+The applicant is a sophomore at Carnegie Mellon, class of May 2029, studying Information
+Systems and Policy & Management, US work authorized, no visa sponsorship needed. The
+target is a SUMMER 2027 internship.
+
+YOUR TASK
+Search the web and determine, for the summer 2027 cycle:
+1. When the application window opens, and whether it is open right now.
+2. The deadline, and whether it is a hard cutoff or rolling.
+3. The exact posting title to apply to. Large employers post many near-identical
+   internships split by graduation year; naming the wrong one is the failure mode
+   this field exists to prevent.
+4. The working application URL.
+5. Any eligibility rule that would include or exclude a May 2029 graduate —
+   graduation-year windows, class-year requirements, credit minimums, major
+   requirements, citizenship or sponsorship rules, or identity-based scoping.
+
+RULES, IN ORDER OF IMPORTANCE
+- Every date you report must be traceable to a specific URL and a short quote from
+  that page. If you cannot produce both, the date is "unknown". Do not infer, do not
+  average across sources, do not carry forward a prior year's date as if it were this
+  year's.
+- Rank sources: the employer's own careers domain first, the employer's applicant
+  tracking system (Workday, Greenhouse, SmartRecruiters, Phenom) second, a university
+  career centre third. Rank internship aggregators, SEO listicles and "top internships
+  2027" blog posts LAST, and mark anything resting on them as an estimate, never
+  confirmed.
+- "confirmed" means you read the open or close date on a page belonging to the
+  employer, on a page that is about the summer 2027 cycle specifically. Everything
+  else is "estimate". If the 2027 cycle has closed, say "closed".
+- If the page you find is about a previous cycle, say so plainly in notes rather than
+  treating it as current.
+- Be explicit when you find nothing. "not_found" is a useful answer and a wrong date
+  is worse than no date.
+
+OUTPUT
+Return ONLY a JSON object, no prose before or after, no markdown fences:
+{
+  "status": "found" | "not_found" | "closed",
+  "openDate": "YYYY-MM-DD or null — the date the window opens, null if unknown",
+  "appWin": "short human phrase for when it opens, e.g. 'Opens ~mid-Nov 2026, rolling'",
+  "dl": "short human phrase for the deadline, e.g. 'Jan 15, 2027 hard cutoff'",
+  "conf": "confirmed" | "estimate" | "closed",
+  "roleTitle": "exact posting title to search for, or null",
+  "link": "working application or program URL, or null",
+  "eligNote": "2-4 sentences on eligibility and what to verify before applying, or null",
+  "changed": ["list of field names you believe differ from what is recorded above"],
+  "evidence": [ { "claim": "what this supports", "url": "source url", "quote": "under 25 words from the page" } ],
+  "notes": "anything the applicant should know that does not fit the fields above"
+}`;
+}
+
+/* One prompt covering several rows at once. Chunked deliberately: a single request
+   to verify all 66 would need ~200 searches, overflow the context, and come back
+   degraded on the rows near the end. Six or so is the point where the model still
+   does real work on the last one in the list. Each row carries its `id` so the
+   answers can be routed back to the right cards. */
+function buildBatchPrompt(list) {
+  const today = new Date().toISOString().slice(0,10);
+  const rows = list.map((o, i) => `--- ROW ${i + 1} ---
+id: ${o.id}
+Organization: ${o.org}
+Role as recorded: ${o.role}
+Exact posting title recorded: ${o.roleTitle || "(none)"}
+Link recorded: ${o.link || "(none)"}
+Currently recorded opens: ${o.appWin || "(none)"}${o.openDate ? " (sortable date " + o.openDate + ")" : ""}
+Currently recorded deadline: ${o.dl || "(none)"}
+Currently recorded confidence: ${confOf(o)} (last checked ${o.checked || "never"})`).join("\n\n");
+
+  return `You are verifying ${list.length} rows in an internship application tracker. Today is ${today}.
+
+The applicant is a sophomore at Carnegie Mellon, class of May 2029, studying Information
+Systems and Policy & Management, US work authorized, needs no visa sponsorship. The target
+is a SUMMER 2027 internship.
+
+${rows}
+
+FOR EACH ROW, search the web and determine, for the summer 2027 cycle:
+1. When the application window opens, and whether it is open right now.
+2. The deadline, and whether it is a hard cutoff or rolling.
+3. The exact posting title to apply to. Large employers post many near-identical
+   internships split by graduation year; naming the wrong one is the failure mode
+   that field exists to prevent.
+4. A working application URL.
+5. Any eligibility rule that would include or exclude a May 2029 graduate: graduation-year
+   windows, class-year requirements, credit minimums, major requirements, citizenship or
+   sponsorship rules, or identity-based scoping.
+
+RULES, IN ORDER OF IMPORTANCE
+- Every date you report must be traceable to a specific URL and a short quote from that
+  page. If you cannot produce both, the date is unknown and status is "not_found". Do not
+  infer, do not average across sources, and do not carry a prior year's date forward as if
+  it were this year's.
+- Rank sources: the employer's own careers domain first, their applicant tracking system
+  (Workday, Greenhouse, SmartRecruiters, Phenom) second, a university career centre third.
+  Rank internship aggregators, SEO listicles and "top internships 2027" posts LAST, and
+  mark anything resting on them as "estimate", never "confirmed".
+- "confirmed" means you read the date on a page belonging to the employer that is about
+  the summer 2027 cycle specifically. Everything else is "estimate". If that cycle has
+  already closed, use "closed".
+- If the page you find covers a previous cycle, say so plainly in notes rather than
+  treating it as current.
+- Work through the rows in order and give the last row the same effort as the first. If you
+  run low on room, return fewer rows completely rather than all of them thinly, and say
+  which ones you skipped in the "skipped" field.
+
+OUTPUT
+Return ONLY a JSON object, no prose before or after, no markdown fences:
+{
+  "results": [
+    {
+      "id": "the id string given above, copied exactly",
+      "org": "organization name, for a sanity check",
+      "status": "found" | "not_found" | "closed",
+      "openDate": "YYYY-MM-DD or null",
+      "appWin": "short phrase for when it opens, e.g. 'Opens ~mid-Nov 2026, rolling'",
+      "dl": "short phrase for the deadline, e.g. 'Jan 15, 2027 hard cutoff'",
+      "conf": "confirmed" | "estimate" | "closed",
+      "roleTitle": "exact posting title, or null",
+      "link": "working URL, or null",
+      "eligNote": "2-4 sentences on eligibility and what to verify, or null",
+      "evidence": [ { "claim": "...", "url": "...", "quote": "under 25 words" } ],
+      "notes": "anything else worth knowing"
+    }
+  ],
+  "skipped": ["ids you could not get to"]
+}`;
+}
+
+/* Route a batch answer back to the right rows. Falls back to matching on organization
+   name when the model drops or mangles an id, which it occasionally does. */
+function parseBatch(text, list) {
+  const obj = parseCheck(text);
+  const arr = Array.isArray(obj) ? obj : (obj.results || obj.rows || []);
+  if (!Array.isArray(arr) || !arr.length) throw new Error("No results array in that JSON.");
+  const byId = {}, unmatched = [];
+  arr.forEach(r => {
+    let target = list.find(o => o.id === r.id);
+    if (!target && r.org) {
+      const norm = x => String(x).toLowerCase().replace(/[^a-z0-9]/g, "");
+      target = list.find(o => norm(o.org) === norm(r.org))
+            || list.find(o => norm(o.org).startsWith(norm(r.org).slice(0, 8)));
+    }
+    if (target) byId[target.id] = r; else unmatched.push(r.org || r.id || "(unnamed)");
+  });
+  return { byId, unmatched, skipped: obj.skipped || [] };
+}
+
+/* Pull the JSON back out. Models sometimes wrap it in fences or add a sentence
+   despite being told not to, so take the outermost brace pair rather than trusting
+   the whole string to parse. */
+function parseCheck(text) {
+  let t = (text || "").trim().replace(/^```(?:json)?/i, "").replace(/```$/,"").trim();
+  const a = t.indexOf("{"), b = t.lastIndexOf("}");
+  if (a === -1 || b === -1) throw new Error("No JSON object in the response.");
+  return JSON.parse(t.slice(a, b + 1));
+}
+
+async function runCheck(o, { key, model, signal }) {
+  let messages = [{ role:"user", content: buildCheckPrompt(o) }];
+  let searches = 0;
+
+  for (let turn = 0; turn < 6; turn++) {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      signal,
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": key,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 3000,
+        messages,
+        tools: [{ type:"web_search_20250305", name:"web_search", max_uses: 6 }],
+      }),
+    });
+
+    if (!res.ok) {
+      let detail = "";
+      try { const j = await res.json(); detail = (j.error && j.error.message) || ""; } catch(e){}
+      if (res.status === 401) throw new Error("API key rejected. Check the key in Settings.");
+      if (res.status === 429) throw new Error("Rate limited by the API. Wait a minute and retry.");
+      if (res.status === 400 && /web search/i.test(detail))
+        throw new Error("Web search is disabled for this API organization. Enable it in the Claude Console, or use the no-key path instead.");
+      throw new Error(`API error ${res.status}. ${detail}`);
+    }
+
+    const data = await res.json();
+    searches += (data.usage && data.usage.server_tool_use && data.usage.server_tool_use.web_search_requests) || 0;
+
+    // A long search turn can be paused server-side; resend the assistant message unchanged.
+    if (data.stop_reason === "pause_turn") {
+      messages = [...messages, { role:"assistant", content: data.content }];
+      continue;
+    }
+
+    const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n");
+    const sources = [];
+    (data.content || []).forEach(b => {
+      if (b.type === "text" && Array.isArray(b.citations))
+        b.citations.forEach(c => { if (c.url && !sources.some(x => x.url === c.url)) sources.push({ url:c.url, title:c.title }); });
+    });
+    const parsed = parseCheck(text);
+    parsed._sources = sources;
+    parsed._searches = searches;
+    return parsed;
+  }
+  throw new Error("The model kept pausing without finishing. Try again, or use the no-key path.");
+}
+
+/* Which fields the review screen offers, and how to show them. */
+const CHECK_FIELDS = [
+  { k:"openDate",  label:"Opens on (sortable date)" },
+  { k:"appWin",    label:"Opens (label)" },
+  { k:"dl",        label:"Deadline" },
+  { k:"conf",      label:"Date confidence" },
+  { k:"roleTitle", label:"Exact posting title" },
+  { k:"link",      label:"Application link" },
+  { k:"eligNote",  label:"Eligibility note" },
+];
+
 /* ---------- Runway: the next 240 days as one horizontal strip ----------
    Plots each opportunity by the date its application window OPENS, which is what
    the countdown badges key on. Anything already open, plus outreach targets with no
@@ -1178,6 +1459,101 @@ function Runway({ opps, onPick }) {
   );
 }
 
+
+/* ---------- the review screen: a diff you accept field by field ---------- */
+function CheckPanel({ opp, state, onRun, onPaste, onApply, onDismiss, hasKey }) {
+  const [manual, setManual] = useState("");
+  const [showManual, setShowManual] = useState(false);
+  const [picked, setPicked] = useState(null);
+
+  const r = state && state.result;
+  const changed = (k) => {
+    const cur = k === "openDate" ? (opp.openDate || "") : (opp[k] || "");
+    const nxt = r[k] == null ? "" : String(r[k]);
+    return nxt !== "" && nxt !== String(cur);
+  };
+  const diffs = r ? CHECK_FIELDS.filter(f => changed(f.k)) : [];
+  const sel = picked || diffs.reduce((a, f) => (a[f.k] = true, a), {});
+
+  const copyPrompt = () => {
+    const t = buildCheckPrompt(opp);
+    if (navigator.clipboard) navigator.clipboard.writeText(t).then(()=>{}, ()=>{});
+    setShowManual(true);
+  };
+
+  const box = { background:"#F8F8F4", border:"1px solid #E1E0D7", borderRadius:"9px", padding:"11px 12px", marginBottom:"10px" };
+  const lbl = { fontSize:"10px", fontWeight:"700", color:"#8C8F88", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:"5px" };
+  const btn = (primary) => ({
+    fontFamily:"'IBM Plex Mono', monospace", fontSize:"10.5px", padding:"5px 11px", borderRadius:"7px",
+    cursor:"pointer", border:"1px solid " + (primary ? "#191A16" : "#D2D1C6"),
+    background: primary ? "#191A16" : "rgba(255,255,255,.7)", color: primary ? "#F5F4EE" : "#5C5F59",
+  });
+
+  return h("div", { style:box },
+    h("div", { style:lbl }, "Verify dates with Claude"),
+
+    !r && h("div", { style:{ display:"flex", gap:"6px", flexWrap:"wrap", alignItems:"center" } },
+      h("button", { onClick:onRun, disabled:!hasKey || (state && state.loading), style:{ ...btn(true), opacity: hasKey ? 1 : .4 } },
+        state && state.loading ? "Searching\u2026" : "Check with API"),
+      h("button", { onClick:copyPrompt, style:btn(false) }, "Copy prompt"),
+      h("button", { onClick:()=>setShowManual(!showManual), style:btn(false) }, "Paste result"),
+      !hasKey && h("span", { style:{ fontSize:"10.5px", color:"#8C8F88" } }, "no API key set \u2014 use Copy prompt"),
+    ),
+
+    state && state.error && h("div", { style:{ marginTop:"8px", fontSize:"11.5px", color:"#A32D2D", background:"#FCEBEB", border:"1px solid #f0c0c0", borderRadius:"6px", padding:"7px 9px", lineHeight:"1.5" } }, state.error),
+
+    showManual && !r && h("div", { style:{ marginTop:"9px" } },
+      h("div", { style:{ fontSize:"11.5px", color:"#5C5F59", lineHeight:"1.55", marginBottom:"6px" } },
+        "Prompt copied. Paste it into a Claude chat with web search turned on, then paste the JSON it returns here."),
+      h("textarea", { value:manual, onChange:e=>setManual(e.target.value), placeholder:'{ "status": "found", ... }',
+        style:{ width:"100%", minHeight:"70px", fontFamily:"'IBM Plex Mono', monospace", fontSize:"11px", padding:"7px 9px", border:"1px solid #D2D1C6", borderRadius:"6px", background:"#fff", resize:"vertical" } }),
+      h("button", { onClick:()=>onPaste(manual), style:{ ...btn(true), marginTop:"6px" } }, "Load result"),
+    ),
+
+    r && h("div", null,
+      h("div", { style:{ fontSize:"11.5px", color:"#5C5F59", lineHeight:"1.55", marginBottom:"9px" } },
+        h("b", { style:{ fontWeight:"600", color:"#191A16" } },
+          r.status === "found" ? "Found" : r.status === "closed" ? "Cycle closed" : "Nothing found"),
+        r._searches ? ` \u00B7 ${r._searches} searches` : "",
+        r.notes ? " \u00B7 " + r.notes : "",
+      ),
+
+      diffs.length === 0
+        ? h("div", { style:{ fontSize:"11.5px", color:"#085041", background:"#E1F5EE", borderRadius:"6px", padding:"7px 9px", marginBottom:"9px" } },
+            "No differences from what is already recorded. Confidence and last-checked can still be stamped below.")
+        : diffs.map(f => h("label", { key:f.k, style:{ display:"block", marginBottom:"7px", cursor:"pointer" } },
+            h("div", { style:{ display:"flex", gap:"7px", alignItems:"flex-start" } },
+              h("input", { type:"checkbox", checked:!!sel[f.k], style:{ marginTop:"3px", flexShrink:0 },
+                onChange:e => setPicked({ ...sel, [f.k]: e.target.checked }) }),
+              h("div", { style:{ minWidth:0, flex:1 } },
+                h("div", { style:{ fontSize:"10px", color:"#8C8F88", textTransform:"uppercase", letterSpacing:"0.05em" } }, f.label),
+                h("div", { style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"11px", color:"#A32D2D", textDecoration:"line-through", wordBreak:"break-word" } },
+                  (f.k === "openDate" ? opp.openDate : opp[f.k]) || "(empty)"),
+                h("div", { style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"11px", color:"#085041", wordBreak:"break-word" } },
+                  String(r[f.k])),
+              ),
+            ),
+          )),
+
+      Array.isArray(r.evidence) && r.evidence.length > 0 && h("div", { style:{ marginTop:"4px", marginBottom:"9px" } },
+        h("div", { style:lbl }, "Evidence \u2014 check these before accepting"),
+        r.evidence.slice(0, 6).map((e, i) => h("div", { key:i, style:{ fontSize:"11px", color:"#5C5F59", lineHeight:"1.5", marginBottom:"5px", borderLeft:"2px solid #E1E0D7", paddingLeft:"8px" } },
+          h("div", null, e.claim),
+          e.quote && h("div", { style:{ fontStyle:"italic", color:"#8C8F88" } }, "\u201C", e.quote, "\u201D"),
+          e.url && h("a", { href:e.url, target:"_blank", rel:"noopener noreferrer",
+            style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"10px", color:"#185FA5", wordBreak:"break-all" } }, e.url),
+        )),
+      ),
+
+      h("div", { style:{ display:"flex", gap:"6px", flexWrap:"wrap" } },
+        h("button", { onClick:()=>onApply(sel, r), style:btn(true) },
+          diffs.length ? "Apply selected" : "Stamp as checked"),
+        h("button", { onClick:onDismiss, style:btn(false) }, "Discard"),
+      ),
+    ),
+  );
+}
+
 /* ---------- Add / Edit Opportunity form ----------
    One form, two jobs. `initial` empty = adding. `initial` populated = editing an
    existing row, built-in or yours. Editing a built-in writes a partial override
@@ -1290,6 +1666,17 @@ function App() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [showHidden, setShowHidden] = useState(false);
+  const [checks, setChecks] = useState({});          // id -> {loading, error, result}
+  const [apiKey, setApiKeyState] = useState("");
+  const [model, setModelState] = useState(MODELS[0].id);
+  const [showSettings, setShowSettings] = useState(false);
+  const [batch, setBatch] = useState(null);          // {done, total, current} while sweeping
+  const [chunkSize, setChunkSize] = useState(6);
+  const [chunkIdx, setChunkIdx] = useState(0);
+  const [bulkText, setBulkText] = useState("");
+  const [bulkMsg, setBulkMsg] = useState("");
+  const [copied, setCopied] = useState(false);
+  const abortRef = useRef(null);
   const [msg, setMsg] = useState("");
   const [loaded, setLoaded] = useState(false);
 
@@ -1301,6 +1688,8 @@ function App() {
     setCustomOpps([ ...d.customOpps ]);
     setEdits({ ...d.edits });
     setHidden([ ...d.hidden ]);
+    setApiKeyState(getKey());
+    setModelState(getModel());
     setLoaded(true);
   }, []);
 
@@ -1359,6 +1748,100 @@ function App() {
     setCustomOpps([ ...ref.current.customOpps ]);
     persist();
     if (expanded === id) setExpanded(null);
+  };
+
+  /* ---------- date verification ---------- */
+  const setCheck = (id, v) => setChecks(prev => ({ ...prev, [id]: v }));
+
+  const runOne = async (o, signal) => {
+    setCheck(o.id, { loading:true });
+    try {
+      const result = await runCheck(o, { key: getKey(), model: getModel(), signal });
+      setCheck(o.id, { result });
+      return true;
+    } catch (e) {
+      if (e.name === "AbortError") { setCheck(o.id, null); return false; }
+      setCheck(o.id, { error: e.message || String(e) });
+      return false;
+    }
+  };
+
+  const pasteResult = (id, text) => {
+    try { setCheck(id, { result: parseCheck(text) }); }
+    catch (e) { setCheck(id, { error: "That didn't parse as JSON. Paste the whole object, braces included." }); }
+  };
+
+  /* Applying writes into the same edits overlay as a manual edit, so it is revertable
+     and carries no special status. The provenance line is appended rather than
+     replacing your notes. */
+  const applyCheck = (o, sel, r) => {
+    const patch = {};
+    CHECK_FIELDS.forEach(f => { if (sel[f.k] && r[f.k] != null && r[f.k] !== "") patch[f.k] = r[f.k]; });
+    if (patch.openDate && !/^\d{4}-\d{2}-\d{2}$/.test(patch.openDate)) delete patch.openDate;
+    patch.checked = new Date().toISOString().slice(0,10);
+    if (!patch.conf && r.conf) patch.conf = r.conf;
+    const merged = { ...o, ...patch };
+    delete merged.edited;
+    addOpp(merged, true);
+    const stamp = `[${patch.checked}] Verified with Claude (${getModel()}). Status: ${r.status}.`
+      + (Array.isArray(r._sources) && r._sources.length ? " Sources: " + r._sources.slice(0,3).map(x=>x.url).join(" ") : "")
+      + (Array.isArray(r.evidence) && r.evidence.length && !(r._sources||[]).length ? " Sources: " + r.evidence.map(e=>e.url).filter(Boolean).slice(0,3).join(" ") : "");
+    const prior = ref.current.notes[o.id] || "";
+    ref.current.notes = { ...ref.current.notes, [o.id]: (prior ? prior + "\n\n" : "") + stamp };
+    setNotes({ ...ref.current.notes });
+    persist();                       // addOpp persisted the edit; the note needs its own save
+    setCheck(o.id, null);
+  };
+
+  /* ---------- batched no-key path ---------- */
+  const copyChunk = () => {
+    const text = buildBatchPrompt(curChunk);
+    const done = () => { setCopied(true); setTimeout(()=>setCopied(false), 1800); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, () => { window.prompt("Copy this prompt:", text); });
+    } else { window.prompt("Copy this prompt:", text); }
+  };
+
+  const loadBulk = () => {
+    try {
+      const { byId, unmatched, skipped } = parseBatch(bulkText, allOpps);
+      const ids = Object.keys(byId);
+      if (!ids.length) { setBulkMsg("Parsed, but none of the rows matched anything in the tracker."); return; }
+      setChecks(prev => {
+        const next = { ...prev };
+        ids.forEach(id => { next[id] = { result: byId[id] }; });
+        return next;
+      });
+      setBulkText("");
+      setBulkMsg(`Loaded ${ids.length} ${ids.length === 1 ? "result" : "results"} into the review queue.`
+        + (unmatched.length ? ` Could not match: ${unmatched.join(", ")}.` : "")
+        + (skipped.length ? ` The model skipped ${skipped.length}.` : "")
+        + " Open each row to accept or reject the changes.");
+      if (chunkIdx < chunks.length - 1) setChunkIdx(chunkIdx + 1);
+    } catch (e) {
+      setBulkMsg("That didn't parse. Paste the whole JSON object including the outer braces.");
+    }
+  };
+
+  const pendingIds = Object.keys(checks).filter(id => checks[id] && checks[id].result);
+
+  const runBatch = async () => {
+    const targets = rows.filter(o => confOf(o) !== "closed");
+    if (!targets.length) return;
+    const est = (targets.length * 0.05).toFixed(2);
+    if (!confirm(`Check ${targets.length} visible ${targets.length === 1 ? "row" : "rows"} against the live web.\n\n`
+      + `Rough cost: $${est} on your API key (about 2-4 searches at $0.01 each, plus tokens, per row).\n`
+      + `Nothing is applied automatically \u2014 each row lands in a diff you review.\n\n`
+      + `Continue?`)) return;
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    for (let i = 0; i < targets.length; i++) {
+      if (ctrl.signal.aborted) break;
+      setBatch({ done:i, total:targets.length, current:targets[i].org });
+      await runOne(targets[i], ctrl.signal);
+    }
+    setBatch(null);
+    abortRef.current = null;
   };
 
   const downloadFile = (filename, content, mime) => {
@@ -1477,12 +1960,18 @@ function App() {
     const cOk = cat === "all" ? true
       : cat === "opennow" ? isOpenNow(o)
       : cat === "actnow"  ? isActNow(o)
+      : cat === "review"  ? !!(checks[o.id] && checks[o.id].result)
       : o.cats.includes(cat);
     const tOk = tierF === "all" || o.tier === Number(tierF);
     return cOk && tOk;
   });
 
   const cnt = (...vals) => allOpps.filter(o => vals.includes(statuses[o.id] || "Not started")).length;
+  const chunkTargets = rows.filter(o => confOf(o) !== "closed");
+  const chunks = [];
+  for (let i = 0; i < chunkTargets.length; i += chunkSize) chunks.push(chunkTargets.slice(i, i + chunkSize));
+  const curChunk = chunks[Math.min(chunkIdx, Math.max(0, chunks.length - 1))] || [];
+
   const untouched = (o) => !["Applied","Waiting","Offer","Accepted","Rejected"].includes(statuses[o.id] || "Not started");
   const actN  = allOpps.filter(o => isActNow(o)  && untouched(o)).length;
   const openN = allOpps.filter(o => isOpenNow(o) && untouched(o)).length;
@@ -1559,6 +2048,106 @@ function App() {
       h("button", { onClick:triggerImport, style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"10.5px", padding:"6px 11px", borderRadius:"7px", border:"1px solid #D2D1C6", background:"rgba(255,255,255,.6)", color:"#5C5F59", cursor:"pointer" } }, "⬆ Restore from backup"),
       h("input", { ref:importInputRef, type:"file", accept:"application/json", onChange:handleImportFile, style:{ display:"none" } }),
       h("button", { onClick:exportCSV, style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"10.5px", padding:"6px 11px", borderRadius:"7px", border:"1px solid #D2D1C6", background:"rgba(255,255,255,.6)", color:"#5C5F59", cursor:"pointer" } }, "⬇ Export as spreadsheet (.csv)"),
+      h("button", { onClick:()=>setShowSettings(!showSettings), style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"10.5px", padding:"6px 11px", borderRadius:"7px", border:"1px solid " + (apiKey ? "#1D9E75" : "#D2D1C6"), background: apiKey ? "rgba(29,158,117,.09)" : "rgba(255,255,255,.6)", color: apiKey ? "#0B7A55" : "#5C5F59", cursor:"pointer" } },
+        apiKey ? "\u2699 Claude key set" : "\u2699 Set up date checking"),
+    ),
+
+    showSettings && h("div", { style:{ background:"#fff", border:"1px solid #E1E0D7", borderRadius:"10px", padding:"14px 16px", marginBottom:"16px" } },
+      h("div", { style:{ fontSize:"13px", fontWeight:"600", marginBottom:"7px" } }, "Date checking with Claude"),
+
+      /* ---------- the free path, first because it's the one to use ---------- */
+      h("div", { style:{ background:"#F8F8F4", border:"1px solid #E1E0D7", borderRadius:"9px", padding:"12px 13px", marginBottom:"14px" } },
+        h("div", { style:{ fontSize:"11.5px", fontWeight:"700", color:"#191A16", marginBottom:"6px" } },
+          "Check many rows at once \u2014 no API key, no cost"),
+        h("div", { style:{ fontSize:"11.5px", color:"#5C5F59", lineHeight:"1.6", marginBottom:"10px" } },
+          "Copy one prompt covering several rows, paste it into a Claude chat with web search on, then paste the JSON back here. Results land in a review queue and you accept them row by row. ",
+          "Chunked on purpose: asking one message to verify all ", chunkTargets.length, " would need hundreds of searches and the rows near the end would come back thin."),
+
+        chunkTargets.length === 0
+          ? h("div", { style:{ fontSize:"11.5px", color:"#8C8F88" } }, "Nothing in the current filter to check.")
+          : h("div", null,
+              h("div", { style:{ display:"flex", gap:"7px", alignItems:"center", flexWrap:"wrap", marginBottom:"9px" } },
+                h("button", { onClick:copyChunk,
+                  style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"10.5px", padding:"6px 12px", borderRadius:"7px", border:"1px solid #191A16", background:"#191A16", color:"#F5F4EE", cursor:"pointer" } },
+                  copied ? "\u2713 Copied" : `Copy prompt for ${curChunk.length} rows`),
+                chunks.length > 1 && h("span", { style:{ display:"inline-flex", gap:"4px", alignItems:"center" } },
+                  h("button", { onClick:()=>setChunkIdx(Math.max(0, chunkIdx - 1)), disabled:chunkIdx === 0,
+                    style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"10.5px", padding:"6px 9px", borderRadius:"6px", border:"1px solid #D2D1C6", background:"transparent", color: chunkIdx === 0 ? "#C9C8C0" : "#5C5F59", cursor: chunkIdx === 0 ? "default" : "pointer" } }, "\u2039"),
+                  h("span", { style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"10.5px", color:"#5C5F59" } },
+                    `batch ${Math.min(chunkIdx, chunks.length - 1) + 1} of ${chunks.length}`),
+                  h("button", { onClick:()=>setChunkIdx(Math.min(chunks.length - 1, chunkIdx + 1)), disabled:chunkIdx >= chunks.length - 1,
+                    style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"10.5px", padding:"6px 9px", borderRadius:"6px", border:"1px solid #D2D1C6", background:"transparent", color: chunkIdx >= chunks.length - 1 ? "#C9C8C0" : "#5C5F59", cursor: chunkIdx >= chunks.length - 1 ? "default" : "pointer" } }, "\u203A"),
+                ),
+                h("span", { style:{ display:"inline-flex", gap:"4px", alignItems:"center", marginLeft:"auto" } },
+                  h("span", { style:{ fontSize:"10.5px", color:"#8C8F88" } }, "rows per batch"),
+                  h("select", { value:chunkSize, onChange:e=>{ setChunkSize(Number(e.target.value)); setChunkIdx(0); },
+                    style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"10.5px", padding:"5px 7px", border:"1px solid #D2D1C6", borderRadius:"6px", background:"#fff" } },
+                    [3,4,6,8,10].map(n => h("option", { key:n, value:n }, n))),
+                ),
+              ),
+
+              h("div", { style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"10px", color:"#8C8F88", lineHeight:"1.6", marginBottom:"10px", wordBreak:"break-word" } },
+                "in this batch: " + curChunk.map(o => o.org).join(" \u00B7 ")),
+
+              h("textarea", { value:bulkText, onChange:e=>setBulkText(e.target.value),
+                placeholder:'Paste the JSON back here \u2014 { "results": [ \u2026 ] }',
+                style:{ width:"100%", minHeight:"64px", fontFamily:"'IBM Plex Mono', monospace", fontSize:"11px", padding:"8px 9px", border:"1px solid #D2D1C6", borderRadius:"6px", background:"#fff", resize:"vertical" } }),
+              h("div", { style:{ display:"flex", gap:"7px", alignItems:"center", flexWrap:"wrap", marginTop:"7px" } },
+                h("button", { onClick:loadBulk, disabled:!bulkText.trim(),
+                  style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"10.5px", padding:"6px 12px", borderRadius:"7px", border:"1px solid #D2D1C6", background: bulkText.trim() ? "rgba(255,255,255,.9)" : "transparent", color: bulkText.trim() ? "#191A16" : "#C9C8C0", cursor: bulkText.trim() ? "pointer" : "default" } },
+                  "Load results into review queue"),
+                pendingIds.length > 0 && h("button", { onClick:()=>{ setCat("review"); setShowSettings(false); },
+                  style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"10.5px", padding:"6px 12px", borderRadius:"7px", border:"1px solid #BA7517", background:"rgba(250,238,218,.85)", color:"#633806", cursor:"pointer" } },
+                  `Review ${pendingIds.length} waiting`),
+                pendingIds.length > 0 && h("button", { onClick:()=>{ if (confirm("Discard all " + pendingIds.length + " unreviewed results?")) setChecks({}); },
+                  style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"10.5px", padding:"6px 12px", borderRadius:"7px", border:"1px solid #D2D1C6", background:"transparent", color:"#8C8F88", cursor:"pointer" } },
+                  "Discard all"),
+              ),
+              bulkMsg && h("div", { style:{ marginTop:"8px", fontSize:"11.5px", lineHeight:"1.55", color:"#085041", background:"#E1F5EE", border:"1px solid #b6ded0", borderRadius:"6px", padding:"7px 9px" } }, bulkMsg),
+            ),
+      ),
+      h("div", { style:{ fontSize:"12px", color:"#5C5F59", lineHeight:"1.6", marginBottom:"12px" } },
+        "Above is the batch tool. Individually, open any row and you'll find a ", h("b", { style:{fontWeight:"600"} }, "Verify dates with Claude"), " block. It sends the row to Claude with web search turned on, asks it to read the employer's own page, and requires a URL and a quote behind every date it reports. Results land in a diff you accept field by field. ",
+        h("b", { style:{fontWeight:"600"} }, "Nothing is ever applied automatically"),
+        " \u2014 an unreviewed model answer overwriting a \u201Cconfirmed\u201D date would defeat the entire point of that label.",
+        h("br"), h("br"),
+        h("b", { style:{fontWeight:"600"} }, "You do not need a key."), " ",
+        "The batch tool above and the per-row \u201CCopy prompt\u201D button both cost nothing beyond your existing subscription, because they run in a normal Claude chat rather than through the API.",
+        h("br"), h("br"),
+        "A key is only worth it for sweeping many rows at once. Rough cost is 2\u20134 searches per row at $0.01 each plus tokens, so about $0.03\u20130.08 a row, or a couple of dollars for the whole tracker. ",
+        h("a", { href:"https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-search-tool", target:"_blank", rel:"noopener noreferrer", style:{ color:"#185FA5" } }, "Web search pricing"),
+        ".",
+      ),
+      h("div", { style:{ background:"#FAEEDA", border:"1px solid #e8d5ab", borderRadius:"7px", padding:"9px 11px", marginBottom:"12px", fontSize:"11.5px", color:"#633806", lineHeight:"1.55" } },
+        h("b", { style:{fontWeight:"700"} }, "Before you paste a key: "),
+        "it is stored in this browser's local storage in plain text, so anyone with access to this browser profile can read it, and so can any script running on this page. Use a dedicated key with a spend limit set in the Claude Console, not your main one. The key is kept out of the tracker data object on purpose, so it never lands in a backup or CSV export \u2014 but it also will not travel with them, so you'll re-enter it on a new device."),
+      h("div", { style:{ display:"grid", gridTemplateColumns:"1fr", gap:"9px" } },
+        h("div", null,
+          h("div", { style:{ fontSize:"10px", fontWeight:"700", color:"#8C8F88", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:"3px" } }, "Anthropic API key (optional)"),
+          h("div", { style:{ display:"flex", gap:"6px" } },
+            h("input", { type:"password", value:apiKey, placeholder:"sk-ant-\u2026 (leave blank to use Copy prompt instead)",
+              onChange:e=>{ setApiKeyState(e.target.value); setKey(e.target.value); },
+              style:{ flex:1, fontFamily:"'IBM Plex Mono', monospace", fontSize:"11px", padding:"7px 9px", border:"1px solid #D2D1C6", borderRadius:"6px", background:"#fff" } }),
+            apiKey && h("button", { onClick:()=>{ setApiKeyState(""); setKey(""); },
+              style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"10.5px", padding:"6px 11px", borderRadius:"6px", border:"1px solid #f0c0c0", background:"transparent", color:"#A32D2D", cursor:"pointer" } }, "Clear"),
+          ),
+        ),
+        h("div", null,
+          h("div", { style:{ fontSize:"10px", fontWeight:"700", color:"#8C8F88", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:"3px" } }, "Model"),
+          h("select", { value:model, onChange:e=>{ setModelState(e.target.value); setModel(e.target.value); },
+            style:{ width:"100%", fontFamily:"'IBM Plex Mono', monospace", fontSize:"11px", padding:"7px 9px", border:"1px solid #D2D1C6", borderRadius:"6px", background:"#fff" } },
+            MODELS.map(m => h("option", { key:m.id, value:m.id }, m.label))),
+        ),
+      ),
+      apiKey && h("div", { style:{ marginTop:"12px", display:"flex", gap:"8px", alignItems:"center", flexWrap:"wrap" } },
+        h("button", { onClick:runBatch, disabled:!!batch,
+          style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"10.5px", padding:"6px 12px", borderRadius:"7px", border:"1px solid #191A16", background: batch ? "#8C8F88" : "#191A16", color:"#F5F4EE", cursor: batch ? "default" : "pointer" } },
+          batch ? `Checking ${batch.done + 1}/${batch.total} \u2014 ${batch.current}` : `Check all ${rows.length} visible rows`),
+        batch && h("button", { onClick:()=>{ if (abortRef.current) abortRef.current.abort(); },
+          style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"10.5px", padding:"6px 12px", borderRadius:"7px", border:"1px solid #f0c0c0", background:"transparent", color:"#A32D2D", cursor:"pointer" } }, "Stop"),
+        !batch && h("span", { style:{ fontSize:"11px", color:"#8C8F88" } },
+          "Filter the list first \u2014 sweeping \u201COpen now\u201D or \u201CAct now\u201D is far cheaper than all 66."),
+      ),
     ),
 
     h(Runway, { opps: allOpps, onPick: pickFromRunway }),
@@ -1583,6 +2172,11 @@ function App() {
 
     h("div", { style:{ display:"flex", alignItems:"center", gap:"4px", flexWrap:"wrap", marginBottom:"6px" } },
       CATS.map(c => h("button", { key:c.id, onClick:()=>setCat(c.id), style:pill(cat===c.id) }, c.label)),
+      pendingIds.length > 0 && h("button", { onClick:()=>setCat(cat === "review" ? "all" : "review"),
+        style:{ ...pill(cat === "review"), borderColor: cat === "review" ? "#191A16" : "#BA7517",
+                color: cat === "review" ? "#F5F4EE" : "#633806",
+                background: cat === "review" ? "#191A16" : "rgba(250,238,218,.85)" } },
+        `Review queue (${pendingIds.length})`),
       h("div", { style:{ marginLeft:"auto", display:"flex", gap:"4px" } },
         [["all","All"],["1","T1"],["2","T2"],["3","T3"]].map(([id,label]) =>
           h("button", { key:id, onClick:()=>setTierF(id), style:{...pill(tierF===id), fontSize:"11px", padding:"3px 8px"} }, label)
@@ -1623,6 +2217,8 @@ function App() {
                   o.eligNote && h(IWarn, { size:12, color:"#BA7517" }),
                   o.custom && h("span", { style:{ fontSize:"9px", padding:"1px 6px", borderRadius:"20px", background:CB.custom.bg, color:CB.custom.fg, fontWeight:"600", flexShrink:0 } }, "yours"),
                   o.edited && h("span", { title:"You've edited this entry.", style:{ fontSize:"9px", padding:"1px 6px", borderRadius:"20px", background:"#E6F1FB", color:"#0C447C", fontWeight:"600", flexShrink:0 } }, "edited"),
+                  checks[o.id] && checks[o.id].result && h("span", { title:"A date check is waiting for your review. Open this row.",
+                    style:{ fontSize:"9px", padding:"1px 6px", borderRadius:"20px", background:"#FAEEDA", color:"#633806", fontWeight:"600", flexShrink:0 } }, "check ready"),
                   NEW_IDS.has(o.id) && h("span", { title:"Added in the Aug 14, 2026 sophomore-programs research pass.", style:{ fontSize:"9px", padding:"1px 6px", borderRadius:"20px", background:"#EAF3DE", color:"#173404", fontWeight:"600", flexShrink:0 } }, "new"),
                 ),
                 h("div", { style:{ fontSize:"12.5px", color:"#5C5F59", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", lineHeight:"1.4" } }, o.role),
@@ -1691,6 +2287,14 @@ function App() {
                   o.custom && h("button", { onClick:()=>deleteOpp(o.id), style:{ fontSize:"11px", color:"#A32D2D", background:"transparent", border:"1px solid #f0c0c0", borderRadius:"20px", padding:"3px 10px", cursor:"pointer", display:"inline-flex", alignItems:"center", gap:"4px" } }, h(ITrash,{size:10,color:"#A32D2D"}), "Remove"),
                 ),
               ),
+              h(CheckPanel, {
+                opp:o, state:checks[o.id], hasKey:!!apiKey,
+                onRun:()=>runOne(o),
+                onPaste:(t)=>pasteResult(o.id, t),
+                onApply:(sel, r)=>applyCheck(o, sel, r),
+                onDismiss:()=>setCheck(o.id, null),
+              }),
+
               h("div", null,
                 h("div", { style:{ fontSize:"10px", fontWeight:"700", color:"#8c8c88", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:"4px" } }, "Notes"),
                 h("textarea", { value:note, onChange:e=>setNote(o.id, e.target.value), onBlur:persist,

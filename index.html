@@ -4,16 +4,129 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Summer 2027 Internship Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; padding: 24px 12px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    background: #faf9f6; color: #1c1c1a;
+  :root {
+    --paper:#EFEEE7; --card:#FFFFFF; --ink:#191A16; --ink-2:#5C5F59; --ink-3:#8C8F88;
+    --rule:#E1E0D7; --rule-2:#D2D1C6;
+    --panel:#1A1D22; --panel-2:#23272E;
+    --sans:'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+    --mono:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --r:10px;
   }
-  #root { max-width: 720px; margin: 0 auto; }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; padding: 34px 14px 64px;
+    font-family: var(--sans);
+    background:
+      radial-gradient(1100px 420px at 50% -180px, #FFFFFF 0%, rgba(255,255,255,0) 68%),
+      var(--paper);
+    background-attachment: fixed;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1;
+  }
+  #root { max-width: 760px; margin: 0 auto; }
   input, select, textarea, button { font-family: inherit; }
   a { color: inherit; }
+  ::selection { background: #1A1D22; color: #EFEEE7; }
+
+  /* focus visibility, kept out of the way for mouse users */
+  :focus-visible { outline: 2px solid #2F5FA8; outline-offset: 2px; border-radius: 4px; }
+
+  /* ---------- masthead ---------- */
+  .masthead { display:flex; justify-content:space-between; align-items:flex-end; gap:12px;
+    flex-wrap:wrap; padding-bottom:14px; margin-bottom:18px; border-bottom:1.5px solid var(--ink); }
+  .masthead h1 { font-size:27px; font-weight:700; letter-spacing:-.028em; margin:0; line-height:1.05; }
+  .masthead .kicker { font-family:var(--mono); font-size:9.5px; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--ink-3); margin-bottom:7px; }
+  .masthead .today { font-family:var(--mono); font-size:11px; color:var(--ink-2); }
+
+  /* ---------- runway ---------- */
+  .runway { background:linear-gradient(168deg, var(--panel-2), var(--panel));
+    border-radius:14px; padding:16px 18px 14px; margin-bottom:18px;
+    box-shadow: 0 1px 2px rgba(20,22,18,.16), 0 12px 26px -14px rgba(20,22,18,.5); }
+  .runway-head { display:flex; justify-content:space-between; align-items:flex-start;
+    gap:14px; flex-wrap:wrap; margin-bottom:14px; }
+  .runway-eyebrow { font-family:var(--mono); font-size:9px; letter-spacing:.18em;
+    text-transform:uppercase; color:#7F8794; margin-bottom:3px; }
+  .runway-title { font-size:16px; font-weight:600; color:#F2F3F0; letter-spacing:-.015em; }
+  .runway-nums { display:flex; gap:20px; }
+  .runway-num { text-align:right; }
+  .runway-num span { font-family:var(--mono); font-size:23px; font-weight:600; line-height:1; display:block; }
+  .runway-num small { font-family:var(--mono); font-size:9px; letter-spacing:.08em;
+    color:#7F8794; display:block; margin-top:3px; }
+
+  .runway-body { display:flex; align-items:flex-start; gap:12px; }
+  .runway-gate { flex:0 0 auto; width:62px; height:80px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:1px; cursor:pointer;
+    background:rgba(63,214,154,.09); border:1px solid rgba(63,214,154,.32);
+    border-radius:9px; padding:8px 4px; font-family:var(--mono); }
+  .runway-gate:hover, .runway-gate.on { background:rgba(63,214,154,.17); border-color:rgba(63,214,154,.6); }
+  .runway-gate-n { font-size:23px; font-weight:600; color:#3FD69A; line-height:1; }
+  .runway-gate-l { font-size:8.5px; letter-spacing:.16em; text-transform:uppercase; color:#5E9C82; }
+  .runway-gate-stack { display:flex; flex-wrap:wrap; gap:2px; justify-content:center;
+    margin-top:6px; max-width:48px; }
+  .runway-gate-stack i { width:5px; height:5px; border-radius:1px; background:#3FD69A; opacity:.75; }
+  .runway-plot { position:relative; flex:1; min-width:0; height:80px; margin-bottom:15px;
+    border-top:1px solid rgba(255,255,255,.11); border-bottom:1px solid rgba(255,255,255,.11); }
+  .runway-overflow { position:absolute; right:2px; top:6px; font-family:var(--mono);
+    font-size:9px; padding:1px 5px; border-radius:4px; background:rgba(255,255,255,.1);
+    color:#AEB6C2; cursor:help; }
+  .runway-tick { position:absolute; top:0; bottom:0; width:1px; background:rgba(255,255,255,.07); }
+  .runway-tick-label { position:absolute; bottom:-14px; left:5px; font-family:var(--mono);
+    font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:#666E7B; white-space:nowrap; }
+  .runway-pip { position:absolute; width:8px; height:8px; border-radius:2px; border:none;
+    padding:0; cursor:pointer; transform:translateX(-4px); box-shadow:0 0 0 0 rgba(255,255,255,0); }
+  .runway-pip.est { box-shadow: inset 0 0 0 2px var(--panel); opacity:.85; }
+  .runway-pip:hover, .runway-pip.on, .runway-pip:focus-visible {
+    transform:translateX(-4px) scale(1.9); z-index:5; box-shadow:0 0 0 3px rgba(255,255,255,.16); }
+  .runway-readout { font-family:var(--mono); font-size:10.5px; color:#C3C9D2; margin-top:9px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .runway-readout b { color:#F2F3F0; font-weight:600; }
+  .runway-legend { display:flex; gap:13px; flex-wrap:wrap; margin-top:9px;
+    font-family:var(--mono); font-size:9px; letter-spacing:.05em; color:#7F8794; align-items:center; }
+  .runway-legend i { display:inline-block; width:7px; height:7px; border-radius:2px; margin-right:5px;
+    vertical-align:middle; }
+  .runway-legend-note { margin-left:auto; opacity:.7; }
+
+  /* ---------- stats ---------- */
+  .stats { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:7px; margin-bottom:18px; }
+  .stat { display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:2px; background:var(--card); border:1px solid var(--rule); border-radius:var(--r);
+    padding:12px 6px; text-align:center; font-family:var(--sans); }
+  .stat.clickable { cursor:pointer; }
+  .stat.clickable:hover { border-color:var(--rule-2); background:#FFFEFA; }
+  .stat.on { border-color:var(--ink); box-shadow:inset 0 0 0 1px var(--ink); }
+  .stat-n { font-family:var(--mono); font-size:22px; font-weight:600; line-height:1.05; }
+  .stat-l { font-size:10.5px; color:var(--ink-3); letter-spacing:.01em; }
+
+  /* ---------- cards ---------- */
+  .card { border-radius:var(--r); border:1px solid var(--rule); background:var(--card);
+    margin-bottom:7px; overflow:hidden; box-shadow:0 1px 1px rgba(25,26,22,.03); }
+  .card:hover { border-color:var(--rule-2); box-shadow:0 1px 2px rgba(25,26,22,.07); }
+  .card.open { border-color:var(--rule-2); box-shadow:0 2px 4px rgba(25,26,22,.06), 0 14px 30px -20px rgba(25,26,22,.4); }
+  .tier-head { font-family:var(--mono); font-size:9.5px; font-weight:600; letter-spacing:.16em;
+    color:var(--ink-3); text-transform:uppercase; margin:26px 0 8px; display:flex;
+    align-items:center; gap:10px; }
+  .tier-head::after { content:""; flex:1; height:1px; background:var(--rule); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .card, .stat, .runway-pip { transition: all 150ms cubic-bezier(.2,.7,.3,1); }
+  }
+  @media (max-width: 620px) {
+    body { padding:22px 10px 48px; }
+    .masthead h1 { font-size:23px; }
+    .stats { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .runway-plot { height:74px; }
+    .runway-gate { height:74px; }
+    .runway-gate { width:52px; }
+    .runway-gate-n { font-size:19px; }
+    .runway-legend-note { display:none; }
+  }
 </style>
 </head>
 <body>
@@ -98,7 +211,7 @@ const OPPS = [
     conf:"estimate", checked:"2026-08-13",
     roleTitle:"build4good summer intern (New America) — confirm the 2027 cohort exists before relying on it",
     link:"https://www.build4good.tech",
-    searchLink:"https://www.newamerica.org/career/",
+    searchLink:"https://www.newamerica.org/careers/",
     angle:"New America matches tech students to mission-driven nonprofits — PM, data viz, web dev, interactive maps. LiveThe412 is the perfect portfolio piece. Explicitly targets IS and design majors.",
     eligNote:"Same caution as TCinGC. As of Aug 13, 2026 build4good.tech still advertises a March 1, 2024 deadline, so the site is roughly two years stale and no 2027 cycle is announced. Their stated process is apply in spring, interview in March, matches by end of April — which is later than the Dec date this entry previously showed. Email New America to confirm the program is still operating before counting on it." },
   // ── TIER 2 ──────────────────────────────────────────────────────────────
@@ -145,7 +258,7 @@ const OPPS = [
     conf:"estimate", checked:"2026-08-13",
     roleTitle:"Mayor's Internship Program — Summer 2027 (posts on the City of Philadelphia SmartRecruiters board)",
     link:"https://www.phila.gov/programs/mayors-internship-program/",
-    searchLink:"https://jobs.smartrecruiters.com/CityofPhiladelphia/",
+    searchLink:"https://careers.smartrecruiters.com/CityofPhiladelphia/",
     angle:"LendingLens fits housing and community development offices. Philly community roots (Aceing Autism, MCG Youth). The capstone presentation to city leaders is a networking asset.",
     eligNote:"Concrete numbers now attached: 50 interns selected each year at $18/hr, run by the Office of Talent & Employee Success. The 2026 cycle closed March 20, slightly later than the March 1 this entry previously showed. Applications post on the city's SmartRecruiters board rather than the phila.gov program page, which is informational only." },
   { id:"deloitte", org:"Deloitte", role:"Discovery Internship → Business Technology Analyst Intern",
@@ -153,8 +266,8 @@ const OPPS = [
     openDate:null, appWin:"Summer 2027 window appears CLOSED", dl:"Next cycle: fall/winter 2026–27 for summer 2028",
     conf:"closed", checked:"2026-08-13",
     roleTitle:"Discovery Internship (search \"Discovery\" — do NOT apply to the general Summer Internship, which wants rising seniors)",
-    link:"https://www.deloitte.com/us/en/careers/students.html",
-    searchLink:"https://apply.deloitte.com/careers/SearchJobs/discovery",
+    link:"https://www.deloitte.com/us/en/careers/student-careers.html",
+    searchLink:"https://apply.deloitte.com/en_US/careers/SearchJobs/discovery",
     angle:"Confirmed CMU IS sophomore track (BTA + Strategy roles, summer 2025). Discovery is the sophomore door; the general internship is not.",
     eligNote:"Recruiting for the summer 2027 Discovery cohort reportedly ended May 1, 2026 — before this tracker was built, which is why the old \"opens Aug 2026\" date was wrong. Worth one confirmation email to a Deloitte campus recruiter before writing 2027 off, but plan around the summer 2028 cycle, which should post fall/winter 2026–27." },
   { id:"ps", org:"PublicSource", role:"Audience engagement and analytics intern",
@@ -262,7 +375,7 @@ const OPPS = [
     openDate:"2026-08-01", appWin:"Aug–Sept 2026", dl:"Rolling fall 2026",
     conf:"estimate", checked:"2026-08-13",
     roleTitle:"EY-Parthenon Emerging Leaders Program (sophomore internship) — not the general EY internship",
-    link:"https://www.ey.com/en_us/careers/students",
+    link:"https://www.ey.com/en_us/careers",
     searchLink:"https://careers.ey.com/ey/search/?q=Emerging+Leaders",
     angle:"An 8-week sophomore-specific strategy consulting program, distinct from the general EY Technology Consulting listing. Strategy and policy framing may fit better than pure tech delivery if the P&M side is what draws you. EY-Parthenon is well regarded for corporate strategy and transaction advisory.",
     eligNote:"This is the strongest sophomore-facing consulting entry on the list alongside Capital One. Opens Aug–Sept 2026 on a rolling basis, so the submission date is the real filter — get in during the first two weeks." },
@@ -272,8 +385,8 @@ const OPPS = [
     openDate:null, appWin:"Outreach now", dl:"No formal deadline",
     conf:"estimate", checked:"2026-08-13",
     roleTitle:"No posted intern req — this is a cold/warm outreach target, not an application",
-    link:"https://www.carnegielearning.com/careers/",
-    searchLink:"https://www.carnegielearning.com/careers/",
+    link:"https://www.carnegielearning.com/company/careers/",
+    searchLink:"https://www.carnegielearning.com/company/careers/",
     angle:"CMU institutional connection opens doors. The adaptive learning gap (students not progressing despite platform use) is your kind of systems problem.",
     eligNote:"Nothing to verify by design — there is no posted internship cycle here, which is why it sits in your outreach group rather than your application group. That makes the \"date\" meaningless and the timing entirely yours. Practical note: late August is a good send window, since people are back from summer but not yet buried, and Carnegie Learning is a 10-minute walk from campus, so ask for a conversation rather than a role.",
     urgent:true },
@@ -291,8 +404,8 @@ const OPPS = [
     openDate:"2027-03-01", appWin:"~Mar 2027", dl:"~Apr 2027",
     conf:"estimate", checked:"2026-08-13",
     roleTitle:"Impact Research Intern (verify the title still exists — it did not appear in current openings)",
-    link:"https://newsela.com/about/careers/",
-    searchLink:"https://newsela.com/about/careers/",
+    link:"https://newsela.com/careers",
+    searchLink:"https://newsela.com/careers",
     angle:"LitCorps background is mission-relevant, and the research framing fits the measurement side of your interests better than a generic edtech PM role would.",
     eligNote:"Lowest-confidence entry on the list. I could find no 2027 posting and no current Impact Research Intern req, so both the dates and the role's continued existence are unconfirmed. Combined with the graduate-skewing profile and strong R/tidyverse requirement this entry already flagged, treat it as a junior-year target to revisit in early 2027 rather than something to plan around now." },
   { id:"ets", org:"ETS", role:"Research, data, or technology roles (direct outreach)",
@@ -356,7 +469,7 @@ const OPPS = [
     openDate:"2026-08-01", appWin:"Aug–Sept 2026", dl:"Rolling fall 2026",
     conf:"estimate", checked:"2026-08-13",
     roleTitle:"EY Technology Consulting Intern — Summer 2027 (verify the graduation window before submitting)",
-    link:"https://www.ey.com/en_us/careers/students",
+    link:"https://www.ey.com/en_us/careers",
     searchLink:"https://careers.ey.com/ey/search/?q=intern&locationsearch=United+States",
     angle:"Confirmed CMU IS sophomore track (2025). Technology consulting directly relevant to IS.",
     eligNote:"EY's general tech consulting internship skews toward rising seniors. The sophomore-specific door at EY is the EY-Parthenon Emerging Leaders Program, already listed separately in Tier 2 — treat that as the primary application and this as the backup." },
@@ -365,7 +478,7 @@ const OPPS = [
     openDate:"2026-08-01", appWin:"Aug–Sept 2026", dl:"Rolling",
     conf:"estimate", checked:"2026-08-13",
     roleTitle:"KPMG Rise Leadership Conference (freshmen/sophomores) and KPMG Embark Scholars (8-week rotational internship)",
-    link:"https://www.kpmguscareers.com/students/",
+    link:"https://www.kpmguscareers.com/",
     searchLink:"https://www.kpmguscareers.com/job-search/?keyword=intern",
     angle:"Confirmed CMU IS sophomore track (2025). Federal Technology Enablement bridges consulting and your civic/gov interest.",
     eligNote:"Rise is a conference at KPMG's Orlando Lakehouse for freshmen and sophomores; Embark Scholars is the actual 8-week internship with rotations across Audit, Tax, and Advisory, reviewed on a rolling basis. Both are underclassman-facing — the general Advisory internship is not." },
@@ -383,7 +496,7 @@ const OPPS = [
     openDate:"2026-09-15", appWin:"~Sept–Nov 2026", dl:"Rolling once posted",
     conf:"estimate", checked:"2026-08-13",
     roleTitle:"Software Engineer, Intern — the only intern title IXL currently posts; PM/data intern reqs do not appear to exist",
-    link:"https://www.ixl.com/company/jobs",
+    link:"https://www.ixl.com/company/careers",
     searchLink:"https://www.linkedin.com/company/ixl-learning/jobs/",
     angle:"Personalized learning platform for 15M+ K-12 students, and already on your cold outreach list.",
     eligNote:"Expectation correction: this entry told you to \"look for a PM or data analyst posting alongside the SWE roles,\" but across IXL's current openings the only intern title is Software Engineer, Intern, based at the San Mateo HQ. If you want non-engineering work here, cold outreach is the route, not the jobs board — which is how you had it categorized originally anyway. No 2027-specific posting was live as of Aug 13, 2026." },
@@ -393,7 +506,7 @@ const OPPS = [
     conf:"confirmed", checked:"2026-08-13",
     roleTitle:"Campus Undergraduate Summer Internship Program - 2027 Sophomore Finance, Finance - New York, NY",
     link:"https://careers.americanexpress.com/en/sites/CX_1/job/26011904/",
-    searchLink:"https://careers.americanexpress.com/en/search-jobs/Campus%20Undergraduate%20Summer%20Internship%20Program%202027/",
+    searchLink:"https://careers.americanexpress.com/en/search-jobs/",
     angle:"General Finance rotation across Corporate Planning & Analysis, Global Commercial Services Finance, US Consumer Services Finance, Global Merchant & Network Finance, Controllership, and Global Treasury. LendingLens gives you a credit/risk story that most finance applicants can't tell.",
     eligNote:"THIS IS THE ENTRY THAT SENT YOU TO THE WRONG ROLE. Amex posts ~27 near-identically-named internships and they split by graduation year. Sophomore Finance requires graduation Dec 2028–June 2029 — that's you, Class of 2029. Every other 2027 Campus posting (Strategy & Analytics, Product Management, Marketing, Credit & Fraud Risk) requires graduation Dec 2027–June 2028, i.e. rising seniors, and you are not eligible for any of them. Before submitting, open the posting and confirm the graduation window says 2028–2029. If it says 2027–2028, close the tab — wrong role." },
   { id:"amphil", org:"AmPhil", role:"Development Intern — nonprofit fundraising & operations support",
@@ -401,7 +514,7 @@ const OPPS = [
     openDate:"2026-11-01", appWin:"~Late 2026 – spring 2027", dl:"Rolling",
     conf:"estimate", checked:"2026-08-13",
     roleTitle:"Development Intern — operations and general administrative support, plus back-end client project work",
-    link:"https://amphil.com/careers/intern/",
+    link:"https://amphil.com/careers/",
     searchLink:"https://amphil.com/careers/",
     angle:"You already built cover letters for this one, so the marginal cost of another shot is low.",
     eligNote:"Two details sharpen the decision. The program is shorter than a standard internship, running early June to late July rather than a full 10–12 weeks, which leaves room around it but also means less depth. And the work is explicitly operations and general administrative support with back-end assistance on client projects, confirming your own read that this is nonprofit administration rather than anything IS or tech-forward. There's potential for continued contract work afterward. Worth asking yourself honestly whether the fundraising ops work interests you, or whether this was mainly a fallback." },
@@ -414,6 +527,263 @@ const OPPS = [
     searchLink:"https://standtogetherfellowships.org/application-process/",
     angle:"Placements span policy research, communications, and program management at real nonprofits including Cato, R Street, Reason Foundation and the Institute for Humane Studies.",
     eligNote:"Removed the \"act now\" flag this entry used to carry — it was pushing Koch into your urgent queue for no reason. Admissions are rolling and the 2026 summer cohort accepted applications through April 2026, so the equivalent 2027 deadline is roughly April 2027. Structurally: 12 weeks, a mandatory two-day in-person summit in Arlington, and required biweekly virtual programming on Thursday afternoons, which you must attend in full. Note also that the stipend is for 32 hrs/week at the partner org, not 40. The program is explicitly built around classical liberal principles (individual liberty, limited government, free markets) with coursework in that philosophy — a different starting point from the civic-tech framing behind most of your other picks. Worth being clear-eyed about, not an automatic no." },
+
+  // ══ ADDED 2026-08-14: sophomore-specific programs research pass ══════════
+  // Every entry below was link-checked on 2026-08-14. Dates are marked "estimate"
+  // unless the employer's own page published them.
+
+  // ── Product / tech ──────────────────────────────────────────────────────
+  { id:"pnc", org:"PNC", role:"Technology Undergraduate Intern — Engineering or Data track",
+    tier:1, cats:["local","tech","fintech"], loc:"Pittsburgh, PA (also Cleveland, Dallas, Denver, Phoenix, Birmingham)", comp:"$18–35/hr", dur:"10 weeks, in-office",
+    openDate:"2026-08-03", appWin:"Posted Aug 3, 2026 — very short window", dl:"~2 business days per posting; evergreen req, reposts",
+    conf:"confirmed", checked:"2026-08-14",
+    roleTitle:"Technology Undergraduate Intern (req R231441)",
+    link:"https://careers.pnc.com/global/en/job/R231441/Technology-Undergraduate-Intern",
+    searchLink:"https://careers.pnc.com/global/en/students-internships-development-programs",
+    angle:"The best structural fit on this entire list and nobody talks about it. Sophomore-eligible with no identity restriction and no CS-major gate, in the city you already live in, at a bank whose technology org does exactly the data and process work you like. LivePGH is a civic data product built on six public sources — that maps onto their 'automating manual processes' and 'data' intern tracks without any translation.",
+    eligNote:"READ THE WINDOW. Pulled the live req on Aug 14, 2026: posted Aug 3, updated Aug 5, and the posting itself says it is \"expected to be posted for two business days from 08/03/2026.\" So this specific req is very likely already closed. The saving grace is that PNC flags it as an evergreen requisition, meaning it reposts on the same ID — check weekly rather than writing it off. Requirements read directly off the posting: bachelor's in progress, technology-relevant major preferred, sophomore OR junior status, minimum 3.0 GPA, no visa sponsorship and no STEM OPT. Base pay $18–35/hr depending on location.",
+    urgent:true },
+  { id:"duolingothrive_pm", org:"Duolingo", role:"Thrive — the PM track specifically (separate posting from SWE)",
+    tier:1, cats:["edtech","local","tech"], loc:"Pittsburgh, PA (East Liberty HQ)", comp:"$43–45/hr (was $50–52 in 2024)", dur:"10 weeks",
+    openDate:"2026-10-01", appWin:"PM opens ~Oct 2026; SWE ~end of Sept; design ~early Nov", dl:"Hard deadline, not rolling",
+    conf:"estimate", checked:"2026-08-14",
+    roleTitle:"Thrive Intern — Associate Product Manager (NOT the SWE Thrive posting, and not the standard APM internship)",
+    link:"https://careers.duolingo.com/?search=thrive",
+    searchLink:"https://careers.duolingo.com/",
+    angle:"The APM Thrive listing carries no programming-coursework requirement, while the SWE Thrive track asks for at least two college-level CS courses. If you were going to skip Duolingo because the engineering bar felt wrong, this is the door that was actually built for you.",
+    eligNote:"Duplicate of the main Duolingo entry on purpose — the tracks post separately and on different dates, so treating Duolingo as one row is how you miss the one you're eligible for. Duolingo's own careers blog says SWE Thrive opens end of September, product management opens in October, design early November. Roughly 25 seats against thousands of applications, ~76% return-offer rate across tracks. Framed as a pipeline for sophomores from underrepresented communities in tech, so read the posting's own eligibility language rather than assuming either way." },
+  { id:"linkedinfirstplay", org:"LinkedIn", role:"First Play — SWE internship built for first- and second-years",
+    tier:3, cats:["tech"], loc:"Hybrid (US)", comp:"Paid", dur:"12 weeks",
+    openDate:"2026-11-15", appWin:"~2-week window, late Nov 2026", dl:"~Early Dec 2026",
+    conf:"estimate", checked:"2026-08-14",
+    roleTitle:"First Play Software Engineering Internship",
+    link:"https://careers.linkedin.com/pathways-programs/internships/Technical/first-play",
+    searchLink:"https://careers.linkedin.com/pathways-programs/internships",
+    angle:"New program, so the applicant pool has not calcified yet. Twelve weeks and paid.",
+    eligNote:"Two gates read off their page on Aug 14, 2026, and the second one probably disqualifies the interesting version of this. First, graduation December 2027 or later — you clear that easily. Second, they ask for a bachelor's in computer science or a related technical degree, and the process opens with a timed HackerRank assessment. IS may or may not be read as 'related technical'; the HackerRank screen is the real filter. Worth one application, not worth building a fall around. The window is roughly two weeks in late November, so set an alert for Nov 15." },
+  { id:"palantiraccel", org:"Palantir", role:"Accelerate (the program that replaced Palantir Path)",
+    tier:3, cats:["tech","civic"], loc:"New York, NY or Washington, DC", comp:"~$60/hr + housing stipend", dur:"10–12 weeks",
+    openDate:"2026-08-15", appWin:"~Aug–Oct 2026", dl:"Rolling once open",
+    conf:"estimate", checked:"2026-08-14",
+    roleTitle:"Palantir Accelerate — sophomore and junior track (Path is discontinued; do not search for it)",
+    link:"https://www.palantir.com/careers/students-and-early-talent",
+    searchLink:"https://www.palantir.com/careers/",
+    angle:"Their public-sector work is the closest thing in big tech to what you actually care about, and the DC placement makes it a policy-adjacent summer rather than a pure engineering one.",
+    eligNote:"Link corrected: /careers/students/accelerate/ 404s as of Aug 14, 2026 and redirects to Palantir's error page. The students-and-early-talent hub is the live entry point. The Aug–Oct window may already be open, so check now rather than in September." },
+  { id:"uberstar", org:"Uber", role:"UberSTAR — first- and second-year internship",
+    tier:3, cats:["tech"], loc:"San Francisco or New York", comp:"~$50–55/hr", dur:"10–12 weeks",
+    openDate:"2026-09-15", appWin:"~Sept–Dec 2026", dl:"Rolling",
+    conf:"estimate", checked:"2026-08-14",
+    roleTitle:"UberSTAR Internship",
+    link:"https://www.uber.com/us/en/careers/uberstar/",
+    searchLink:"https://www.uber.com/us/en/careers/list/?query=intern",
+    angle:"One of the few dedicated underclassman tracks reported as still running after the 2025 wave of program cancellations.",
+    eligNote:"Uber's site returned a 406 to an automated fetch on Aug 14, 2026, so the link could not be verified — that is bot-blocking, not a dead page, and it should open normally in your browser. Dates are projected from the prior cycle." },
+  { id:"salesforcelaunchpad", org:"Salesforce", role:"Futureforce Tech Launchpad — sophomore full-stack program",
+    tier:3, cats:["tech"], loc:"San Francisco, CA", comp:"Paid", dur:"10 weeks",
+    openDate:"2026-10-01", appWin:"~Oct 2026 – Feb 2027", dl:"~Feb 2027",
+    conf:"estimate", checked:"2026-08-14",
+    roleTitle:"Futureforce Tech Launchpad — application runs through CodePath, not the Salesforce careers portal",
+    link:"https://info.codepath.org/futureforce-tech-launchpad",
+    searchLink:"https://www.salesforce.com/company/careers/university-recruiting/",
+    angle:"Full-stack web development with a long runway and a partner org running admissions, which usually means a more forgiving read of non-CS majors.",
+    eligNote:"The thing to know is where it lives: this is administered by CodePath, so applying on salesforce.com will not find it. Sophomore-scoped, 10 weeks, San Francisco." },
+  { id:"nvidiaignite", org:"NVIDIA", role:"Ignite — first- and second-year program",
+    tier:3, cats:["tech"], loc:"Santa Clara, CA", comp:"~$23–42/hr + housing", dur:"12 weeks",
+    openDate:"2026-10-06", appWin:"~13-day window in early Oct 2026", dl:"~Oct 19, 2026",
+    conf:"estimate", checked:"2026-08-14",
+    roleTitle:"NVIDIA Ignite Internship — posts under University Recruiting, not the general intern board",
+    link:"https://www.nvidia.com/en-us/about-nvidia/careers/university-recruiting/",
+    searchLink:"https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite",
+    angle:"AI/ML project tracks, which is where underclassman tech hiring has actually been growing.",
+    eligNote:"Shortest window on this entire list. The 2026 cycle posted Oct 6 and closed Oct 19 — thirteen days. Focused on students from underrepresented communities in tech, so check the posting's eligibility language. Heavily CS-weighted work; a stretch for IS unless you want the ML exposure specifically." },
+  { id:"amazonpropel", org:"Amazon", role:"Propel — first- and second-year program",
+    tier:3, cats:["tech"], loc:"Multiple US", comp:"~$60/hr", dur:"12 weeks",
+    openDate:"2026-08-15", appWin:"~Aug–Oct 2026", dl:"Rolling",
+    conf:"estimate", checked:"2026-08-14",
+    roleTitle:"Amazon Propel Program — SDE-track; distinct from the general Amazon internship",
+    link:"https://www.amazon.jobs/teams/internships-for-students",
+    searchLink:"https://www.amazon.jobs/content/en/career-programs/university",
+    angle:"Focused on first-generation and underrepresented students, with a real conversion pipeline.",
+    eligNote:"Your existing watchlist entry already flags the honest version of this: Propel is SDE/CS-track specific and a weaker fit for IS than Microsoft Explore. Listed here so it is a decision rather than an oversight." },
+  { id:"googleasdi", org:"Google", role:"Associate Software Developer Intern (ASDI, formerly STEP)",
+    tier:3, cats:["tech"], loc:"Multiple US", comp:"~$45–50/hr", dur:"12 weeks",
+    openDate:"2026-09-22", appWin:"~2–4 week window, late Sept – early Oct 2026", dl:"~Oct 2026",
+    conf:"estimate", checked:"2026-08-14",
+    roleTitle:"Associate Software Developer Intern — the STEP name is retired; searching \"STEP\" may return nothing",
+    link:"https://www.google.com/about/careers/applications/buildyourfuture/programs/step/",
+    searchLink:"https://www.google.com/about/careers/applications/jobs/results/?employment_type=INTERN",
+    angle:"Structured weekly mentorship and a real project rather than a toy one.",
+    eligNote:"Conflicting reporting, so treat this as unresolved. One 2026 source says STEP was simply renamed ASDI and the program continues; another says Google, Microsoft and Meta all eliminated their dedicated freshman/sophomore tracks following DEI policy changes, with Meta University cancelled outright and no replacement. The program URL still resolved on Aug 14, 2026. Estimated acceptance 1.5–5%, and the window is 2–4 weeks. Verify before spending prep time." },
+  { id:"mlh", org:"Major League Hacking", role:"MLH Fellowship — Open Source track",
+    tier:3, cats:["tech"], loc:"Remote", comp:"Stipend", dur:"12 weeks",
+    openDate:null, appWin:"Rolling, all year", dl:"No fixed date",
+    conf:"confirmed", checked:"2026-08-14",
+    roleTitle:"MLH Fellowship — Open Source track (there are also Production Engineering and Site Reliability tracks)",
+    link:"https://fellowship.mlh.com/",
+    searchLink:"https://fellowship.mlh.com/programs",
+    angle:"The realistic backstop. If the Sept–Dec wave comes back empty you still have a structured, mentored, resume-legible summer instead of a gap.",
+    eligNote:"Open to all class years and genuinely rolling, which means it cannot close on you the way everything else here can. Worth keeping in the back pocket rather than the front." },
+
+  // ── Consulting ──────────────────────────────────────────────────────────
+  { id:"ibmaccelerate", org:"IBM", role:"IBM Accelerate — Consulting track (virtual, unpaid, 8 weeks)",
+    tier:1, cats:["consulting","tech"], loc:"Virtual, ~3 hrs/week evenings", comp:"Unpaid",  dur:"8 weeks, June–July",
+    openDate:"2027-01-15", appWin:"~Jan–Feb 2027", dl:"~Early March 2027",
+    conf:"estimate", checked:"2026-08-14",
+    roleTitle:"IBM Accelerate — rank Consulting as track 1 of 2 (others: Client Engineering, Design, Marketing, Research, Software Developer)",
+    link:"https://www.ibm.com/careers",
+    searchLink:"https://www.ibm.com/careers/search?q=Accelerate",
+    angle:"Unpaid and virtual is the feature, not the bug — three hours a week in the evenings means it stacks on top of a real paid summer instead of competing with one. It feeds paid IBM internship offers the following year, which lines up with your junior-year recruiting rather than this one.",
+    eligNote:"Open to undergraduates of all backgrounds, with the curriculum built specifically for current sophomores — one of very few sophomore consulting programs with no identity restriction. Prior cycles closed in early March. No stable deep link exists; the program page moves every year, so search \"IBM Accelerate\" on ibm.com/careers in January." },
+  { id:"cornerstonesummit", org:"Cornerstone Research", role:"Sophomore Summit 2027 — economic consulting",
+    tier:1, cats:["consulting"], loc:"Firm office, TBD", comp:"Paid attendance", dur:"2 days: May 26–27, 2027",
+    openDate:"2026-12-01", appWin:"Opens ~winter 2026", dl:"March 28, 2027",
+    conf:"confirmed", checked:"2026-08-14",
+    roleTitle:"Sophomore Summit 2027 — requires resume, college transcript, AND cover letter",
+    link:"https://www.cornerstone.com/wp-content/uploads/2026/07/CR_Sophomore-Summit_2027.pdf",
+    searchLink:"https://www.cornerstone.com/careers/",
+    angle:"The single most natural narrative fit in the consulting group. Economic consulting is applied game theory and empirical analysis in an adversarial setting, which is literally the security economics work with Prof. H — agent-based simulation of cybercriminal team formation is a better story here than anywhere else on this list. You complete a project on their real case types and get their Summer Analyst recruiting process walked through.",
+    eligNote:"One of only four confirmed dates in this whole tracker: the deadline is March 28, 2027 and the program runs May 26–27, 2027, both published in Cornerstone's own 2027 PDF. A cover letter is required, which most summits don't ask for — budget real time for it, and reuse Variant A." },
+  { id:"protiviti", org:"Protiviti", role:"Discover Protiviti — technology and internal audit consulting",
+    tier:2, cats:["consulting","tech"], loc:"Multiple US", comp:"Paid", dur:"Short program",
+    openDate:"2026-11-01", appWin:"~Winter 2026–27", dl:"TBD",
+    conf:"estimate", checked:"2026-08-14",
+    roleTitle:"Discover Protiviti — the sophomore program; the Protiviti Internship is the separate 6–12-months-from-graduation one",
+    link:"https://www.protiviti.com/us-en/discover",
+    searchLink:"https://www.protiviti.com/us-en/careers/campus-recruiting",
+    angle:"Tech risk and internal audit consulting is IS coursework with a billing rate attached. Less prestige competition than the Big 4 pipeline, and the work is closer to what the degree actually teaches.",
+    eligNote:"Eligibility read off their page on Aug 14, 2026 and it is unusually precise: Discover is for candidates exactly 2 years from their expected graduation date, while the regular Protiviti Internship is for people 6–12 months out. Class of 2029 means you hit the 2-year mark during the 2026-27 academic year, so this cycle is the one." },
+  { id:"bdo", org:"BDO", role:"Pathway to Success — first-year and sophomore program",
+    tier:3, cats:["consulting"], loc:"Multiple US", comp:"Paid", dur:"Short program",
+    openDate:"2026-11-01", appWin:"~Winter 2026–27", dl:"TBD",
+    conf:"estimate", checked:"2026-08-14",
+    roleTitle:"Pathway to Success (listed on BDO's internship page, not the general job board)",
+    link:"https://www.bdo.com/careers/internship",
+    searchLink:"https://careers.bdo.com/",
+    angle:"Mid-tier accounting and advisory. Lower ceiling than the Big 4 but a genuinely open door for underclassmen.",
+    eligNote:"Sophomore- and first-year-facing. No dates published for 2027 as of Aug 14, 2026." },
+  { id:"crowecase", org:"Crowe", role:"National Case Competition — first-year and sophomore",
+    tier:3, cats:["consulting"], loc:"Virtual rounds + finals", comp:"Prize + recruiting pipeline", dur:"Competition",
+    openDate:"2026-10-01", appWin:"~Fall 2026", dl:"TBD",
+    conf:"estimate", checked:"2026-08-14",
+    roleTitle:"Crowe National Case Competition",
+    link:"https://www.crowe.com/careers/students/case-competition",
+    searchLink:"https://www.crowe.com/careers/students",
+    angle:"Competition format means it produces a resume line whether or not it produces an offer — placing in a national case competition is worth more on paper than an unremarkable insight day.",
+    eligNote:"Crowe blocked the automated link check on Aug 14, 2026 (403), so the URL is unverified rather than known-bad. It should open normally in a browser." },
+  { id:"fti", org:"FTI Consulting", role:"IMPACT Summer Leadership Program",
+    tier:3, cats:["consulting"], loc:"Multiple US", comp:"Paid", dur:"Summer program",
+    openDate:"2026-11-01", appWin:"~Winter 2026–27", dl:"TBD",
+    conf:"estimate", checked:"2026-08-14",
+    roleTitle:"IMPACT Summer Leadership Program (sophomore)",
+    link:"https://www.fticonsulting.com/careers/students",
+    searchLink:"https://www.fticonsulting.com/careers/job-search",
+    angle:"Economic and forensic consulting. Adjacent to Cornerstone but with a broader practice mix.",
+    eligNote:"FTI blocked the automated link check (403) on Aug 14, 2026. Sophomore-scoped per Duke's early-insight roundup; no 2027 dates published." },
+  { id:"bainbel", org:"Bain & Company", role:"Building Entrepreneurial Leaders (BEL) — sophomore program",
+    tier:3, cats:["consulting"], loc:"Multiple US", comp:"Paid", dur:"Summer",
+    openDate:"2026-10-01", appWin:"~Fall 2026", dl:"TBD",
+    conf:"estimate", checked:"2026-08-14",
+    roleTitle:"Building Entrepreneurial Leaders (BEL) — check the eligibility statement before starting the application",
+    link:"https://www.bain.com/careers/work-with-us/internships-programs/building-entrepreneurial-leaders/",
+    searchLink:"https://www.bain.com/careers/find-a-role/",
+    angle:"Bain's sophomore door, listed for completeness of the map rather than as a recommendation.",
+    eligNote:"RESTRICTED PROGRAM. Per MIT's consulting guide, BEL is designed for Black, Hispanic/Latin American, and Indigenous second-year students. Bain's parallel sophomore program CREW is scoped to women. Check the current language on the posting itself before investing time — these scopes have been shifting across firms since 2025. Bain blocked the automated link check (403)." },
+  { id:"bcggfl", org:"BCG", role:"Growing Future Leaders (GFL) — sophomore internship program",
+    tier:3, cats:["consulting"], loc:"Multiple US", comp:"Paid", dur:"Summer",
+    openDate:"2026-08-15", appWin:"~Aug–Sept 2026", dl:"~Late Sept 2026 (prior cycle: Sept 24)",
+    conf:"estimate", checked:"2026-08-14",
+    roleTitle:"Growing Future Leaders (GFL) Internship Program — check eligibility language on the posting",
+    link:"https://careers.bcg.com/us/en/on-campus/programs/growing-future-leaders",
+    searchLink:"https://careers.bcg.com/global/en/on-campus",
+    angle:"BCG's sophomore-specific route. The Summer Associate posting is a different, junior-facing pipeline.",
+    eligNote:"Timing is the risk. The prior sophomore cycle closed around Sept 24, and BCG has pushed its deadlines earlier in each of the last several cycles — so an October assumption will probably cost you the window. GFL has historically carried identity-based eligibility criteria; the page did not state them plainly on Aug 14, 2026, so confirm on the application itself." },
+
+  // ── Regional (Philly / Pittsburgh) ──────────────────────────────────────
+  { id:"vanguardc2c", org:"Vanguard", role:"College to Corporate (C2C) Internship — seven tracks incl. data science and AI",
+    tier:2, cats:["fintech","local"], loc:"Malvern, PA (also Charlotte, Scottsdale, Dallas)", comp:"Up to ~$58/hr", dur:"10 weeks",
+    openDate:"2026-07-15", appWin:"OPEN NOW — opened mid-July 2026, rolling, posted track by track", dl:"Rolling until seats fill",
+    conf:"confirmed", checked:"2026-08-14",
+    roleTitle:"College to Corporate Internship — pick the track (Technology, Data Science & AI, Investment Management, etc.)",
+    link:"https://www.vanguardjobs.com/students-and-recent-graduates/internships/",
+    searchLink:"https://www.vanguardjobs.com/search-jobs/intern/",
+    angle:"Twenty-five minutes from home in Media, so a Malvern summer costs you no housing — the same argument that makes ETS worth prioritizing, but with an actual posted program behind it. Their careers page filters explicitly by First/Second/Third/Fourth year, which is a good sign that class year is a real field and not a soft preference.",
+    eligNote:"Confirmed open as of Aug 14, 2026 and rolling, which makes it one of only a handful of things on this list you can act on today. Sophomores, juniors and graduate students across seven tracks; roughly 100 seats against thousands of applications. Because it is rolling and closes when full, submission date is the filter.",
+    urgent:true },
+  { id:"vanguardnorthstar", org:"Vanguard", role:"North Star Sophomore Experiential Learning Program — 2-day virtual",
+    tier:3, cats:["fintech","local"], loc:"Virtual", comp:"Free to attend", dur:"2 days",
+    openDate:"2027-03-09", appWin:"~Mar 9–23, 2027 (prior cycle exactly)", dl:"~Mar 23, 2027",
+    conf:"estimate", checked:"2026-08-14",
+    roleTitle:"North Star Sophomore Experiential Learning Program",
+    link:"https://www.vanguardjobs.com/students-and-recent-graduates/internships/",
+    searchLink:"https://www.vanguardjobs.com/students-and-recent-graduates/",
+    angle:"Two days, virtual, no cost, and it feeds the C2C pipeline. Cheap optionality.",
+    eligNote:"The prior cycle ran May 12–13 with applications open March 9–23, and was scoped to the graduating classes of December 2027 or May 2028. If the 2027 edition shifts that window forward by one year it includes you; if it does not, you are a year early. Confirm the graduating-class line before applying." },
+  { id:"upmc", org:"UPMC", role:"Summer Associates Program — IT, supply chain, finance, HR tracks",
+    tier:3, cats:["local"], loc:"Pittsburgh, PA", comp:"Paid", dur:"Summer",
+    openDate:"2026-08-15", appWin:"Applications open Aug 2026", dl:"TBD",
+    conf:"estimate", checked:"2026-08-14",
+    roleTitle:"2027 Summer Associate Program (separate from the January and July 2027 cohorts)",
+    link:"https://careers.upmc.com/students/",
+    searchLink:"https://careers.upmc.com/search-jobs/intern/",
+    angle:"Largest employer in Pittsburgh, and the IT track touches health systems work, which is a genuinely different sector story than everything else here.",
+    eligNote:"Probably not this cycle: it requires 90+ credits and a 3.0+ GPA, and you will most likely be short of 90 credits by summer 2027. Count your credits before spending an evening on it. UPMC's page says applications for the 2027 Summer Associate Program open in August 2026, so the window is now if you do qualify." },
+
+  // ── Finance-adjacent sophomore doors ────────────────────────────────────
+  { id:"bnypre", org:"BNY", role:"Pre-Internship — virtual, 3 sessions across 6 weeks",
+    tier:3, cats:["fintech","fellowship"], loc:"Virtual", comp:"Unpaid learning program", dur:"3 sessions / 6 weeks",
+    openDate:"2027-01-11", appWin:"Registrations open Jan 11, 2027", dl:"Registration, not competitive application",
+    conf:"confirmed", checked:"2026-08-14",
+    roleTitle:"BNY Pre-Internship — the Sophomore Summit experience (Freshman Jumpstart is the other one)",
+    link:"https://www.bny.com/corporate/global/en/about-us/careers/students/pre-internship.html",
+    searchLink:"https://www.bny.com/corporate/global/en/about-us/careers/students.html",
+    angle:"Near-zero cost. Registration rather than a selective application, so the only thing it consumes is three evenings.",
+    eligNote:"Date confirmed on BNY's own page on Aug 14, 2026: registrations for the 2027 program open January 11, 2027. US undergraduate freshmen and sophomores, no visa sponsorship now or in future. Their page splits into a Freshman Jumpstart and a Sophomore Summit — take the second." },
+  { id:"jpmcfellowship", org:"JPMorganChase", role:"Fellowship Program — 5-week finance/tech hybrid",
+    tier:3, cats:["fintech"], loc:"Select offices", comp:"Paid", dur:"5 weeks",
+    openDate:"2026-11-01", appWin:"~Nov 2026 – Jan 2027", dl:"~Jan 2027",
+    conf:"estimate", checked:"2026-08-14",
+    roleTitle:"JPMorganChase Fellowship Program (sophomore) — not the Software Engineering or Code for Good programs",
+    link:"https://www.jpmorganchase.com/careers/explore-opportunities/programs/jpmcfellowship",
+    searchLink:"https://careers.jpmorgan.com/us/en/students/programs",
+    angle:"Short enough that it does not eat the summer, and the finance/tech hybrid framing is closer to IS than a pure markets seat would be.",
+    eligNote:"Sophomore-scoped. No 2027 dates published as of Aug 14, 2026." },
+  { id:"wfsophomore", org:"Wells Fargo", role:"Sophomore Discovery Fellowship Program",
+    tier:3, cats:["fintech"], loc:"Charlotte, NC or New York, NY", comp:"~$25–30/hr + housing", dur:"6–8 weeks",
+    openDate:"2026-09-01", appWin:"~Sept–Oct 2026", dl:"~Oct 2026",
+    conf:"estimate", checked:"2026-08-14",
+    roleTitle:"Sophomore Discovery Fellowship Program — listed under Other Undergraduate Programs",
+    link:"https://www.wellsfargojobs.com/en/early-careers/undergraduate-programs/",
+    searchLink:"https://www.wellsfargojobs.com/en/early-careers/",
+    angle:"Housing included, which is what makes a Charlotte summer viable at that rate.",
+    eligNote:"Link corrected: the specific sophomore-discovery-fellowship-program URL 404s as of Aug 14, 2026, so this points at the undergraduate programs index, which loads. Find the fellowship from there." },
+  { id:"bofasoph", org:"Bank of America", role:"Sophomore Summer Analyst Program — Global Technology",
+    tier:3, cats:["fintech","tech"], loc:"Charlotte, NC or New York, NY", comp:"~$58–65/hr", dur:"10 weeks",
+    openDate:"2026-09-01", appWin:"~Sept–Nov 2026", dl:"~Nov 2026",
+    conf:"estimate", checked:"2026-08-14",
+    roleTitle:"Sophomore Summer Analyst Program — Global Technology (BofA runs several near-identically-named sophomore programs; check the business line)",
+    link:"https://careers.bankofamerica.com/en-us/students/programs/global-technology",
+    searchLink:"https://careers.bankofamerica.com/en-us/students",
+    angle:"The Global Technology line is the IS-relevant one; the rest are markets and banking seats.",
+    eligNote:"Same trap as Amex, structurally: BofA posts multiple sophomore programs split by business line, and the graduation-year and program-name lines are what separate them. Open the posting and confirm before submitting." },
+  { id:"msearlyinsights", org:"Morgan Stanley", role:"Early Insights Program — first-year and sophomore",
+    tier:3, cats:["fintech"], loc:"New York, NY", comp:"Unpaid short program", dur:"Short",
+    openDate:"2027-02-01", appWin:"~Feb–Mar 2027", dl:"~Mar 2027",
+    conf:"estimate", checked:"2026-08-14",
+    roleTitle:"Early Insights Program",
+    link:"https://www.morganstanley.com/people-opportunities/students-graduates",
+    searchLink:"https://www.morganstanley.com/people-opportunities/students-graduates/programs",
+    angle:"Cheap to apply to, and it seeds the following cycle rather than this one.",
+    eligNote:"Short insight event, not an internship. Realistically a relationship-building move for the 2028 cycle." },
+  { id:"walmartsummit", org:"Walmart", role:"Sophomore Summit — Global Tech and Merchandising tracks",
+    tier:3, cats:["tech"], loc:"Bentonville, AR (Home Office)", comp:"Travel covered; interns $21–40/hr", dur:"3 days",
+    openDate:"2026-10-01", appWin:"~Fall 2026 for the spring 2027 summit", dl:"TBD",
+    conf:"estimate", checked:"2026-08-14",
+    roleTitle:"Corporate Intern — Spring Sophomore Summit (Walmart Global Tech or Merchandising)",
+    link:"https://careers.walmart.com/us/en/students",
+    searchLink:"https://careers.walmart.com/results?q=sophomore%20summit",
+    angle:"Three days, travel covered, and invited students interview for a summer 2027 internship on site — a summit that ends in an actual interview rather than a networking mixer.",
+    eligNote:"Link corrected: the prior-cycle req R-2381312 now redirects to Walmart's job-not-found page, so this points at the students hub with a pre-filtered search as the fallback. Watch for the next posting in the fall." },
 ];
 
 const WATCHLIST = [
@@ -422,7 +792,7 @@ const WATCHLIST = [
     link:"https://buildyourfuture.withgoogle.com/programs/apm-intern" },
   { id:"amazonrotation", org:"Amazon", role:"Rotational programs (Operations Finance, Business, etc.)",
     why:"Standard rotational internships require graduating between Dec 2027 and June 2028 — rising seniors. Amazon Propel exists for underclassmen but is SDE/CS-track specific, a weaker fit for IS than Microsoft Explore.",
-    link:"https://www.amazon.jobs/en/business_categories/university-recruiting" },
+    link:"https://www.amazon.jobs/content/en/career-programs/university" },
   { id:"cmuwsp", org:"CMU Washington Semester Program (CMIST)", role:"Full-semester DC internship + policy coursework (fall or spring, not summer)",
     why:"Not a summer program — a full semester living, interning ~24-30 hrs/week, and taking CMU policy classes in DC, open to any major. Worth considering for fall of junior year as an alternative to a single summer internship: it comes with a guaranteed-support internship search, unlocks the Politics and Public Policy minor, and Friedman Fellowship funding applies here too since it's run by the same CMIST office.",
     link:"https://www.cmu.edu/cmist/washington-center/washington-semester-program/index.html" },
@@ -454,9 +824,17 @@ const CUSTOM_VERIFIED = {
     eligNote:"Not individually verified. SAP's iXp postings are per-req and rotate constantly, and this one is a specific Newtown Square listing rather than a program page — expect the direct link to go dead once it fills. The search link finds current iXp reqs instead. iXp is generally open to undergraduates without a strict graduation-year rule, but confirm on the posting." },
 };
 
+/* ids added in the Aug 14, 2026 research pass — drives the "new" badge only */
+const NEW_IDS = new Set(["pnc","duolingothrive_pm","linkedinfirstplay","palantiraccel","uberstar",
+  "salesforcelaunchpad","nvidiaignite","amazonpropel","googleasdi","mlh","ibmaccelerate",
+  "cornerstonesummit","protiviti","bdo","crowecase","fti","bainbel","bcggfl","vanguardc2c",
+  "vanguardnorthstar","upmc","bnypre","jpmcfellowship","wfsophomore","bofasoph","msearlyinsights",
+  "walmartsummit"]);
+
 const CATS = [
   { id:"all", label:"All" },
-  { id:"actnow", label:"Act now" },
+  { id:"opennow", label:"Open now" },
+  { id:"actnow", label:"Act now \u2264 14d" },
   { id:"edtech", label:"Edtech" },
   { id:"civic", label:"Civic & policy" },
   { id:"consulting", label:"Consulting" },
@@ -494,6 +872,103 @@ const CB = {
   custom:     { bg:"#F3E8FF", fg:"#5B21B6", label:"My addition" },
 };
 
+
+/* ---------- link check results, run 2026-08-14 ----------
+   Every URL in this file was fetched with a real browser user-agent on Aug 14, 2026.
+   ok      200, page loaded.
+   blocked The site refused an automated request (403/406/503/500). Almost certainly fine
+           in your browser — Bain, McKinsey, Crowe, FTI, Princeton CITP, Aspen, Uber and
+           Workiva all bot-block. Treat as unverified rather than broken.
+   dead    404 or soft-404 (redirected to an error page). These were replaced where a
+           working URL existed; where one is still listed, the note says so.
+   Six links in the original file were dead and have been repointed:
+     amphil /careers/intern/ · carnegielearning /careers/ · ey /careers/students
+     kpmguscareers /students/ · newamerica /career/ · amex campus search  */
+const LINKCHECK_DATE = "2026-08-14";
+const LINKCHECK = {
+  ok: new Set([
+    "https://amphil.com/careers/","https://apply.deloitte.com/en_US/careers/SearchJobs/discovery",
+    "https://aspeninstitute.hrmdirect.com/employment/job-openings.php",
+    "https://buildyourfuture.withgoogle.com/programs/apm-intern",
+    "https://capitalone.wd12.myworkdayjobs.com/Capital_One/job/McLean-VA/Analyst-Early-Internship-Program---Summer-2027_R244231/apply",
+    "https://careers.americanexpress.com/en/sites/CX_1/job/26011904/",
+    "https://careers.bankofamerica.com/en-us/students/programs/global-technology",
+    "https://careers.bcg.com/us/en/on-campus/programs/growing-future-leaders",
+    "https://careers.duolingo.com","https://careers.duolingo.com/?search=thrive",
+    "https://careers.ey.com/ey/search/?q=Emerging+Leaders",
+    "https://careers.linkedin.com/pathways-programs/internships/Technical/first-play",
+    "https://careers.microsoft.com/v2/global/en/exploremicrosoft",
+    "https://careers.pnc.com/global/en/job/R231441/Technology-Undergraduate-Intern",
+    "https://careers.pnc.com/global/en/students-internships-development-programs",
+    "https://careers.upmc.com/students/","https://careers.smartrecruiters.com/CityofPhiladelphia/",
+    "https://chanzuckerberg.com/careers/career-opportunities/","https://chanzuckerberg.com/careers/internship-program/",
+    "https://codingitforward.com/apply","https://codingitforward.com/faq",
+    "https://fellowship.mlh.com/","https://info.codepath.org/futureforce-tech-launchpad",
+    "https://job-boards.greenhouse.io/bloombergdotorg","https://jobs.boeing.com/it-internships",
+    "https://jobs.comcast.com/early-career","https://jobs.sap.com/search/?q=iXp+intern&locationsearch=United+States",
+    "https://jobs.us.pwc.com/search-jobs/intern/932/1","https://newsela.com/careers",
+    "https://standtogetherfellowships.org/application-process/","https://standtogetherfellowships.org/koch-internship-program/",
+    "https://summer.apply.dcinternships.org/","https://www.accenture.com/us-en/careers/jobsearch?jk=intern&sb=1",
+    "https://www.accenture.com/us-en/careers/life-at-accenture/internships-students",
+    "https://www.amazon.jobs/content/en/career-programs/university","https://www.amazon.jobs/teams/internships-for-students",
+    "https://www.bdo.com/careers/internship","https://www.bny.com/corporate/global/en/about-us/careers/students/pre-internship.html",
+    "https://www.build4good.tech","https://www.capitalonecareers.com/early-internships-program",
+    "https://www.capitalonecareers.com/get-ahead-with-early-career-programs-for-students",
+    "https://www.carnegielearning.com/company/careers/",
+    "https://www.cmu.edu/cmist/washington-center/friedman-trek/index.html",
+    "https://www.cmu.edu/cmist/washington-center/index.html",
+    "https://www.cmu.edu/cmist/washington-center/summer-internship-support/index.html",
+    "https://www.cmu.edu/cmist/washington-center/washington-semester-program/index.html",
+    "https://www.cmu.edu/gelfand/service-learning/model-programs.html",
+    "https://www.cornerstone.com/wp-content/uploads/2026/07/CR_Sophomore-Summit_2027.pdf",
+    "https://www.dcinternships.org/admissions/","https://www.deloitte.com/us/en/careers/student-careers.html",
+    "https://www.ets.org/careers.html","https://www.ey.com/en_us/careers","https://www.ey.com/en_us/careers/parthenon/associate-program",
+    "https://www.google.com/about/careers/applications/buildyourfuture/programs/step/",
+    "https://www.google.com/policyfellowship/usa/","https://www.google.com/policyfellowship/usa/hosts/",
+    "https://www.ibm.com/careers","https://www.ixl.com/company/careers",
+    "https://www.janestreet.com/join-jane-street/internships/",
+    "https://www.jpmorganchase.com/careers/explore-opportunities/programs/jpmcfellowship",
+    "https://www.khanacademy.org/about/internships","https://www.khanacademy.org/careers",
+    "https://www.kpmguscareers.com/","https://www.kpmguscareers.com/job-search/?keyword=intern",
+    "https://www.lifeatspotify.com/jobs?c=students","https://www.lifeatspotify.com/start-your-journey/students",
+    "https://www.linkedin.com/company/ixl-learning/jobs/","https://www.morganstanley.com/people-opportunities/students-graduates",
+    "https://www.nbcunicareers.com/mediatech/internship-program","https://www.newamerica.org/careers/",
+    "https://www.newyorkfed.org/careers/student-programs-and-internships",
+    "https://www.newyorkfed.org/careers/student-programs-and-internships/sophomore-career-exploration-program",
+    "https://www.nvidia.com/en-us/about-nvidia/careers/university-recruiting/",
+    "https://www.palantir.com/careers/students-and-early-talent","https://www.panoramaed.com/about/careers",
+    "https://www.phila.gov/programs/mayors-internship-program/","https://www.philadelphiafed.org/careers",
+    "https://www.philadelphiafed.org/careers/internships","https://www.protiviti.com/us-en/discover",
+    "https://www.publicsource.org/jobs/","https://www.publicsource.org/publicsource-internships-100-journalists-pittsburgh/",
+    "https://www.pwc.com/us/en/careers/campus.html","https://www.tcingc.org/apply","https://www.upworthy.com",
+    "https://www.vanguardjobs.com/students-and-recent-graduates/internships/",
+    "https://www.wellsfargojobs.com/en/early-careers/undergraduate-programs/",
+    "https://careers.walmart.com/us/en/students","https://careers.walmart.com/results?q=sophomore%20summit",
+    "https://careers.americanexpress.com/en/search-jobs/",
+  ]),
+  blocked: new Set([
+    "https://citp.princeton.edu/programs","https://citp.princeton.edu/programs/siegel-public-interest-technology-summer-fellowship-pit-sf",
+    "https://www.aspeninstitute.org/about/careers/","https://careers.ey.com/ey/search/?q=intern&locationsearch=United+States",
+    "https://www.bain.com/careers/work-with-us/internships-programs/building-entrepreneurial-leaders/",
+    "https://www.bain.com/careers/work-with-us/internships-programs/crew/",
+    "https://www.crowe.com/careers/students/case-competition","https://www.fticonsulting.com/careers/students",
+    "https://www.mckinsey.com/careers/search-jobs?query=sophomore","https://www.mckinsey.com/careers/students/undergraduate-degree",
+    "https://www.mckinsey.com/careers/students/undergraduate-degree-candidates/other-schools",
+    "https://www.mckinsey.com/careers/students/sophomore-summer-business-analyst",
+    "https://workiva.wd1.myworkdayjobs.com/en-US/careers","https://workiva.wd1.myworkdayjobs.com/en-US/careers?q=intern",
+    "https://www.uber.com/us/en/careers/uberstar/",
+  ]),
+};
+function linkState(u) {
+  if (!u) return null;
+  if (LINKCHECK.ok.has(u)) return { s:"ok", label:"link checked", bg:"#E1F5EE", fg:"#085041",
+    tip:"Fetched successfully on " + LINKCHECK_DATE + ". The URL resolves; it does not guarantee the posting inside is still open." };
+  if (LINKCHECK.blocked.has(u)) return { s:"blocked", label:"link not checkable", bg:"#F1EFE8", fg:"#6b6b67",
+    tip:"This site blocks automated requests, so it could not be verified on " + LINKCHECK_DATE + ". It will almost certainly open fine in your browser." };
+  return { s:"unknown", label:"link unchecked", bg:"#FAEEDA", fg:"#633806",
+    tip:"Added after the " + LINKCHECK_DATE + " sweep, or edited by you. Not verified." };
+}
+
 /* ---------- date helpers ---------- */
 function daysUntil(d) {
   if (!d) return null;
@@ -528,22 +1003,43 @@ function countdownBadge(o) {
   if (d <= 90) return { label:`${p}${d}d`, bg:"#E6F1FB", fg:"#0C447C" };
   return { label:`~${Math.round(d/30.5)}mo`, bg:"#F1EFE8", fg:"#8c8c88" };
 }
+/* "Open now" = the window is open today, or it's an outreach target with no window
+   at all. "Act now" = open now, or opening inside two weeks. Act now is deliberately
+   a superset of open now: something opening in nine days still needs a resume ready. */
+function isOpenNow(o) {
+  if (confOf(o) === "closed") return false;
+  if (o.urgent && !o.openDate) return true;
+  const d = daysUntil(o.openDate);
+  return d !== null && d <= 0;
+}
 function isActNow(o) {
   if (confOf(o) === "closed") return false;
   if (o.urgent) return true;
   const d = daysUntil(o.openDate);
-  return d !== null && d <= 90;
+  return d !== null && d <= 14;
 }
 
 /* ---------- localStorage persistence (works standalone / on GitHub Pages, per-browser) ---------- */
 const STORAGE_KEY = "intern-tracker-data-v1";
+function blankData() { return { statuses:{}, notes:{}, customOpps:[], edits:{}, hidden:[] }; }
+function normalize(d) {
+  return {
+    statuses: d.statuses || {},
+    notes:    d.notes    || {},
+    customOpps: d.customOpps || [],
+    // edits: per-id partial overrides applied over ANY opportunity, built-in or yours.
+    // Older backup files simply won't have this key, which is why it defaults empty
+    // rather than failing the restore.
+    edits:  d.edits  || {},
+    hidden: Array.isArray(d.hidden) ? d.hidden : [],
+  };
+}
 function loadData() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { statuses:{}, notes:{}, customOpps:[] };
-    const d = JSON.parse(raw);
-    return { statuses:d.statuses||{}, notes:d.notes||{}, customOpps:d.customOpps||[] };
-  } catch (e) { return { statuses:{}, notes:{}, customOpps:[] }; }
+    if (!raw) return blankData();
+    return normalize(JSON.parse(raw));
+  } catch (e) { return blankData(); }
 }
 function saveData(data) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); return true; }
@@ -552,11 +1048,149 @@ function saveData(data) {
 
 const ALL_CAT_OPTIONS = ["edtech","civic","consulting","local","fellowship","fintech","music","media","tech"];
 
-/* ---------- Add Opportunity form ---------- */
-function AddForm({ onAdd, onCancel }) {
+
+/* ---------- Runway: the next 240 days as one horizontal strip ----------
+   Plots each opportunity by the date its application window OPENS, which is what
+   the countdown badges key on. Anything already open, plus outreach targets with no
+   window, sits at day 0. Lane-stacked so overlapping dates stay legible. Click a pip
+   to jump to that card. */
+const RUNWAY_DAYS = 240;
+const PIP = {
+  open:  "#3FD69A",
+  d14:   "#FF6B57",
+  d45:   "#FFB454",
+  d90:   "#78A9FF",
+  later: "#7C8798",
+};
+function pipColor(d) {
+  if (d <= 0) return PIP.open;
+  if (d <= 14) return PIP.d14;
+  if (d <= 45) return PIP.d45;
+  if (d <= 90) return PIP.d90;
+  return PIP.later;
+}
+
+function Runway({ opps, onPick }) {
+  const [hover, setHover] = useState(null);
+
+  const live = opps.filter(o => confOf(o) !== "closed");
+
+  // Anything already open, plus outreach targets with no window at all, is "at the gate".
+  // Those don't belong on a timeline — they're all at zero — so they get their own block.
+  const gate = live.filter(o => isOpenNow(o));
+  const gateIds = new Set(gate.map(o => o.id));
+
+  const pts = live
+    .filter(o => !gateIds.has(o.id))
+    .map(o => {
+      const d = daysUntil(o.openDate);
+      if (d === null || d > RUNWAY_DAYS) return null;
+      return { o, d, est: confOf(o) === "estimate" };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.d - b.d);
+
+  // Lane assignment: left to right, first lane with room. Anything that still collides
+  // after the last lane is folded into a "+N" marker rather than stacked off the panel.
+  const LANES = 6, ROW = 11, MINGAP = 2.4;
+  const laneEnd = new Array(LANES).fill(-99);
+  const shown = [], overflow = [];
+  pts.forEach(pt => {
+    const x = (pt.d / RUNWAY_DAYS) * 100;
+    const lane = laneEnd.findIndex(e => x - e > MINGAP);
+    if (lane === -1) { overflow.push(pt); return; }
+    laneEnd[lane] = x;
+    pt.x = x; pt.lane = lane;
+    shown.push(pt);
+  });
+
+  const months = [];
+  for (let d = 30; d <= RUNWAY_DAYS - 20; d += 30) {
+    const dt = new Date(); dt.setHours(0,0,0,0); dt.setDate(dt.getDate() + d);
+    months.push({ d, label: dt.toLocaleDateString("en-US", { month:"short" }) });
+  }
+
+  const soon = pts.filter(p => p.d <= 14).length;
+  const hoveredPt = hover === "__gate" ? null : pts.find(x => x.o.id === hover);
+
+  return h("div", { className:"runway" },
+    h("div", { className:"runway-head" },
+      h("div", null,
+        h("div", { className:"runway-eyebrow" }, "When each application window opens"),
+        h("div", { className:"runway-title" }, "The next 240 days"),
+      ),
+      h("div", { className:"runway-nums" },
+        h("div", { className:"runway-num" },
+          h("span", { style:{ color:PIP.open } }, gate.length), h("small", null, "open today")),
+        h("div", { className:"runway-num" },
+          h("span", { style:{ color:PIP.d14 } }, soon), h("small", null, "opening \u2264 14d")),
+      ),
+    ),
+
+    h("div", { className:"runway-body" },
+      // ---- the gate: everything you could act on right now ----
+      h("button", {
+        className:"runway-gate" + (hover === "__gate" ? " on" : ""),
+        onMouseEnter:()=>setHover("__gate"), onMouseLeave:()=>setHover(null),
+        onFocus:()=>setHover("__gate"), onBlur:()=>setHover(null),
+        onClick:()=>onPick("__gate"),
+        title:"Filter to everything whose window is open today:\n" + gate.map(o=>o.org).join(", "),
+      },
+        h("span", { className:"runway-gate-n" }, gate.length),
+        h("span", { className:"runway-gate-l" }, "open"),
+        h("span", { className:"runway-gate-stack" },
+          gate.slice(0, 18).map(o => h("i", { key:o.id }))),
+      ),
+
+      h("div", { className:"runway-plot" },
+        months.map(m => h("div", { key:m.d, className:"runway-tick", style:{ left:`${(m.d/RUNWAY_DAYS)*100}%` } },
+          h("span", { className:"runway-tick-label" }, m.label))),
+        shown.map(pt => h("button", {
+          key: pt.o.id,
+          className: "runway-pip" + (pt.est ? " est" : "") + (hover === pt.o.id ? " on" : ""),
+          style: { left:`${pt.x}%`, top:`${6 + pt.lane * ROW}px`, background:pipColor(pt.d) },
+          onMouseEnter:()=>setHover(pt.o.id), onMouseLeave:()=>setHover(null),
+          onFocus:()=>setHover(pt.o.id), onBlur:()=>setHover(null),
+          onClick:()=>onPick(pt.o.id),
+          "aria-label": `${pt.o.org}, opens in ${pt.d} days`,
+          title: `${pt.o.org} \u2014 ${pt.o.role}\nOpens in ${pt.est ? "~" : ""}${pt.d} days \u00B7 ${pt.o.appWin}`,
+        })),
+        overflow.length > 0 && h("span", { className:"runway-overflow",
+          title: overflow.map(pt => pt.o.org).join(", ") }, "+" + overflow.length),
+      ),
+    ),
+
+    h("div", { className:"runway-readout" },
+      hover === "__gate"
+        ? h(React.Fragment, null, h("b", null, gate.length + " open right now"), " \u00B7 click to filter the list to them")
+        : hoveredPt
+          ? h(React.Fragment, null, h("b", null, hoveredPt.o.org), " \u00B7 opens in ",
+              (hoveredPt.est ? "~" : "") + hoveredPt.d + " days \u00B7 ", hoveredPt.o.appWin)
+          : h("span", { style:{ opacity:.55 } }, "Hover a marker for detail, click to jump to the row."),
+    ),
+
+    h("div", { className:"runway-legend" },
+      [["open / outreach", PIP.open], ["\u2264 14d", PIP.d14], ["\u2264 45d", PIP.d45],
+       ["\u2264 90d", PIP.d90], ["later", PIP.later]].map(([l, c]) =>
+        h("span", { key:l }, h("i", { style:{ background:c } }), l)),
+      h("span", { className:"runway-legend-note" }, "hollow = estimated date"),
+    ),
+  );
+}
+
+/* ---------- Add / Edit Opportunity form ----------
+   One form, two jobs. `initial` empty = adding. `initial` populated = editing an
+   existing row, built-in or yours. Editing a built-in writes a partial override
+   into data.edits[id] rather than touching the OPPS list, so the file stays the
+   source of truth and your changes survive an update to it. */
+function OppForm({ onAdd, onCancel, initial, mode }) {
+  const isEdit = mode === "edit";
   const [f, setF] = useState({
     org:"", role:"", tier:2, cats:[], loc:"", comp:"", dur:"",
-    openDate:"", appWin:"", dl:"", link:"", searchLink:"", roleTitle:"", conf:"estimate", angle:"", urgent:false,
+    openDate:"", appWin:"", dl:"", link:"", searchLink:"", roleTitle:"", conf:"estimate", angle:"", eligNote:"", urgent:false,
+    ...(initial || {}),
+    openDate: (initial && initial.openDate) || "",
+    cats: (initial && initial.cats ? initial.cats.filter(c => c !== "custom") : []),
   });
   const set = (k, v) => setF(prev => ({ ...prev, [k]: v }));
   const toggleCat = (c) => setF(prev => ({
@@ -566,7 +1200,7 @@ function AddForm({ onAdd, onCancel }) {
 
   const submit = () => {
     if (!f.org.trim() || !f.role.trim()) { alert("Organization and role are required."); return; }
-    const id = "custom-" + Date.now();
+    const id = isEdit ? initial.id : ("custom-" + Date.now());
     onAdd({
       id, org:f.org.trim(), role:f.role.trim(), tier:Number(f.tier),
       cats: f.cats.length ? [...f.cats, "custom"] : ["custom"],
@@ -576,8 +1210,9 @@ function AddForm({ onAdd, onCancel }) {
       dl: f.dl.trim() || "TBD",
       link: f.link.trim(), searchLink: f.searchLink.trim(), roleTitle: f.roleTitle.trim(),
       conf: f.conf, checked: new Date().toISOString().slice(0,10),
-      angle: f.angle.trim(), urgent: f.urgent, custom: true,
-    });
+      angle: f.angle.trim(), eligNote: (f.eligNote || "").trim(), urgent: f.urgent,
+      custom: isEdit ? !!initial.custom : true,
+    }, isEdit);
   };
 
   const inputStyle = { width:"100%", fontSize:"13px", padding:"7px 9px", border:"1px solid #d0cfc9", borderRadius:"6px", background:"#fff", color:"#1c1c1a", boxSizing:"border-box", fontFamily:"inherit" };
@@ -585,7 +1220,10 @@ function AddForm({ onAdd, onCancel }) {
   const field = (label, node) => h("div", { style:{ marginBottom:"10px" } }, h("label", { style:labelStyle }, label), node);
 
   return h("div", { style:{ border:"1px solid #d0cfc9", borderRadius:"8px", padding:"14px", marginBottom:"14px", background:"#fff" } },
-    h("div", { style:{ fontSize:"13px", fontWeight:"600", marginBottom:"12px", color:"#1c1c1a" } }, "Add your own opportunity"),
+    h("div", { style:{ fontSize:"13px", fontWeight:"600", marginBottom:"12px", color:"#1c1c1a" } },
+      isEdit ? ("Edit \u2014 " + (initial.org || "opportunity")) : "Add your own opportunity"),
+    isEdit && h("div", { style:{ fontSize:"11px", color:"#6b6b67", background:"#f4f3ef", borderRadius:"6px", padding:"7px 9px", marginBottom:"12px", lineHeight:"1.5" } },
+      "Saving overwrites only the fields you change. Your status and notes are untouched. Use \u201CRevert\u201D on the card to drop your edits and go back to the built-in version."),
     h("div", { style:{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px" } },
       field("Organization *", h("input", { style:inputStyle, value:f.org, onChange:e=>set("org", e.target.value), placeholder:"e.g. Notion" })),
       field("Role / title *", h("input", { style:inputStyle, value:f.role, onChange:e=>set("role", e.target.value), placeholder:"e.g. Product intern" })),
@@ -625,13 +1263,14 @@ function AddForm({ onAdd, onCancel }) {
     field("Exact posting title to apply to", h("input", { style:inputStyle, value:f.roleTitle, onChange:e=>set("roleTitle", e.target.value), placeholder:"Paste the posting's exact title + any eligibility gotcha" })),
     field("Direct link (specific posting or program page)", h("input", { style:inputStyle, value:f.link, onChange:e=>set("link", e.target.value), placeholder:"https://..." })),
     field("Fallback search link (survives posting rotation)", h("input", { style:inputStyle, value:f.searchLink, onChange:e=>set("searchLink", e.target.value), placeholder:"https://... their job search, pre-filtered" })),
-    field("Your angle / notes", h("textarea", { style:{...inputStyle, minHeight:"60px", resize:"vertical"}, value:f.angle, onChange:e=>set("angle", e.target.value), placeholder:"Why this is worth pursuing, contacts, next steps..." })),
+    field("Your angle", h("textarea", { style:{...inputStyle, minHeight:"60px", resize:"vertical"}, value:f.angle, onChange:e=>set("angle", e.target.value), placeholder:"Why this is worth pursuing, contacts, next steps..." })),
+    field("Eligibility / caution note", h("textarea", { style:{...inputStyle, minHeight:"60px", resize:"vertical"}, value:f.eligNote, onChange:e=>set("eligNote", e.target.value), placeholder:"Graduation-year rules, restrictions, what to verify before applying..." })),
     h("label", { style:{ fontSize:"12px", color:"#6b6b67", display:"flex", alignItems:"center", gap:"6px", marginBottom:"12px", cursor:"pointer" } },
       h("input", { type:"checkbox", checked:f.urgent, onChange:e=>set("urgent", e.target.checked) }),
       "No fixed deadline — needs direct outreach (flags as \"act now\")"
     ),
     h("div", { style:{ display:"flex", gap:"8px" } },
-      h("button", { onClick:submit, style:{ fontSize:"12px", fontWeight:"600", padding:"7px 14px", borderRadius:"20px", border:"none", background:"#1c1c1a", color:"#fff", cursor:"pointer" } }, "Add to tracker"),
+      h("button", { onClick:submit, style:{ fontSize:"12px", fontWeight:"600", padding:"7px 14px", borderRadius:"20px", border:"none", background:"#1c1c1a", color:"#fff", cursor:"pointer" } }, isEdit ? "Save changes" : "Add to tracker"),
       h("button", { onClick:onCancel, style:{ fontSize:"12px", padding:"7px 14px", borderRadius:"20px", border:"1px solid #d0cfc9", background:"transparent", color:"#6b6b67", cursor:"pointer" } }, "Cancel"),
     )
   );
@@ -643,10 +1282,14 @@ function App() {
   const [statuses, setStatuses] = useState({});
   const [notes, setNotes] = useState({});
   const [customOpps, setCustomOpps] = useState([]);
+  const [edits, setEdits] = useState({});
+  const [hidden, setHidden] = useState([]);
   const [cat, setCat] = useState("all");
   const [tierF, setTierF] = useState("all");
   const [expanded, setExpanded] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [showHidden, setShowHidden] = useState(false);
   const [msg, setMsg] = useState("");
   const [loaded, setLoaded] = useState(false);
 
@@ -656,6 +1299,8 @@ function App() {
     setStatuses({ ...d.statuses });
     setNotes({ ...d.notes });
     setCustomOpps([ ...d.customOpps ]);
+    setEdits({ ...d.edits });
+    setHidden([ ...d.hidden ]);
     setLoaded(true);
   }, []);
 
@@ -674,11 +1319,39 @@ function App() {
     ref.current.notes = { ...ref.current.notes, [id]: v };
     setNotes({ ...ref.current.notes });
   };
-  const addOpp = (opp) => {
+  const addOpp = (opp, isEdit) => {
+    if (isEdit) {
+      // Overrides are stored separately from the built-in list, keyed by id.
+      ref.current.edits = { ...ref.current.edits, [opp.id]: opp };
+      setEdits({ ...ref.current.edits });
+      persist();
+      setEditingId(null);
+      return;
+    }
     ref.current.customOpps = [ ...ref.current.customOpps, opp ];
     setCustomOpps([ ...ref.current.customOpps ]);
     persist();
     setShowForm(false);
+  };
+  const revertOpp = (id) => {
+    if (!confirm("Discard your edits to this entry and go back to the built-in version? Status and notes are kept.")) return;
+    const next = { ...ref.current.edits };
+    delete next[id];
+    ref.current.edits = next;
+    setEdits({ ...next });
+    persist();
+  };
+  const hideOpp = (id) => {
+    if (!confirm("Archive this entry? It stays in your data and can be brought back from \u201CShow archived\u201D.")) return;
+    ref.current.hidden = [ ...new Set([ ...ref.current.hidden, id ]) ];
+    setHidden([ ...ref.current.hidden ]);
+    persist();
+    if (expanded === id) setExpanded(null);
+  };
+  const unhideOpp = (id) => {
+    ref.current.hidden = ref.current.hidden.filter(x => x !== id);
+    setHidden([ ...ref.current.hidden ]);
+    persist();
   };
   const deleteOpp = (id) => {
     if (!confirm("Remove this opportunity you added?")) return;
@@ -713,7 +1386,7 @@ function App() {
       try {
         const d = JSON.parse(ev.target.result);
         if (!confirm("This will replace all current tracker data (statuses, notes, and your added opportunities) with the contents of this backup file. Continue?")) return;
-        const restored = { statuses: d.statuses||{}, notes: d.notes||{}, customOpps: d.customOpps||[] };
+        const restored = normalize(d);
 
         // Report exactly what landed. A backup saved against an older version of this file
         // could reference an opportunity id that has since been renamed or removed — without
@@ -728,12 +1401,16 @@ function App() {
         setStatuses({ ...restored.statuses });
         setNotes({ ...restored.notes });
         setCustomOpps([ ...restored.customOpps ]);
+        setEdits({ ...restored.edits });
+        setHidden([ ...restored.hidden ]);
         // saveData directly rather than persist(): persist() flashes "saved" and clears the
         // message after 1.5s, which would wipe the restore summary before it could be read.
         const saveOk = saveData(ref.current);
         if (!saveOk) { alert("Restored into this session, but the browser refused to save it. Check your storage settings, or the data will be gone when you close the tab."); }
 
+        const editCount = Object.keys(restored.edits).length;
         const summary = `Restored ${statusIds.length - orphans.filter(o=>statusIds.includes(o)).length} statuses, `
+          + (editCount ? `${editCount} edited entries, ` : "")
           + `${noteIds.length - orphans.filter(o=>noteIds.includes(o)).length} notes, `
           + `and ${restored.customOpps.length} of your own opportunities.`;
         if (orphans.length) {
@@ -755,14 +1432,16 @@ function App() {
 
   const csvEscape = (v) => `"${String(v==null?"":v).replace(/"/g,'""')}"`;
   const exportCSV = () => {
-    const header = ["Organization","Role","Tier","Status","Categories","Location","Compensation","Duration","Opens","Deadline","Date confidence","Last checked","Exact posting title","Link","Search link","Eligibility warning","Angle / Notes (built-in)","Your Notes"];
+    const header = ["Organization","Role","Tier","Status","Categories","Location","Compensation","Duration","Opens","Deadline","Date confidence","Last checked","Exact posting title","Link","Search link","Eligibility warning","Angle / Notes (built-in)","Your Notes","Link check","Edited by you","Archived"];
     const lines = [header.map(csvEscape).join(",")];
-    allOpps.forEach(o => {
+    everyOpp.forEach(o => {
+      const ls = linkState(o.link);
       lines.push([
         o.org, o.role, o.tier, statuses[o.id]||"Not started", o.cats.join("; "),
         o.loc, o.comp, o.dur, o.appWin, o.dl,
         confOf(o), o.checked||"never verified", o.roleTitle||"",
         o.link, o.searchLink||"", o.eligNote||"", o.angle||"", notes[o.id]||"",
+        ls ? ls.label : "", o.edited ? "yes" : "", hidden.includes(o.id) ? "yes" : "",
       ].map(csvEscape).join(","));
     });
     const stamp = new Date().toISOString().slice(0,10);
@@ -784,37 +1463,86 @@ function App() {
     });
     return out;
   });
-  const allOpps = [ ...OPPS, ...mergedCustom ];
+  // Your edits win over everything, built-in or custom. `edited` drives the badge.
+  const applyEdits = (o) => {
+    const e = edits[o.id];
+    if (!e) return o;
+    return { ...o, ...e, edited:true, cats: (e.cats && e.cats.length ? e.cats : o.cats) };
+  };
+  const everyOpp    = [ ...OPPS, ...mergedCustom ].map(applyEdits);
+  const allOpps     = everyOpp.filter(o => !hidden.includes(o.id));
+  const archived    = everyOpp.filter(o =>  hidden.includes(o.id));
 
   const rows = allOpps.filter(o => {
-    const cOk = cat === "all" ? true : cat === "actnow" ? isActNow(o) : o.cats.includes(cat);
+    const cOk = cat === "all" ? true
+      : cat === "opennow" ? isOpenNow(o)
+      : cat === "actnow"  ? isActNow(o)
+      : o.cats.includes(cat);
     const tOk = tierF === "all" || o.tier === Number(tierF);
     return cOk && tOk;
   });
 
   const cnt = (...vals) => allOpps.filter(o => vals.includes(statuses[o.id] || "Not started")).length;
-  const actN = allOpps.filter(o => isActNow(o) && !["Applied","Waiting","Offer","Accepted","Rejected"].includes(statuses[o.id] || "Not started")).length;
+  const untouched = (o) => !["Applied","Waiting","Offer","Accepted","Rejected"].includes(statuses[o.id] || "Not started");
+  const actN  = allOpps.filter(o => isActNow(o)  && untouched(o)).length;
+  const openN = allOpps.filter(o => isOpenNow(o) && untouched(o)).length;
 
   const pill = (on) => ({
-    fontSize:"12px", padding:"4px 10px", border:"1px solid #d0cfc9",
-    borderRadius:"20px", cursor:"pointer", fontFamily:"inherit",
-    background: on ? "#1c1c1a" : "transparent", color: on ? "#fff" : "#6b6b67",
+    fontSize:"12px", fontWeight: on ? "600" : "500", padding:"5px 12px",
+    border:"1px solid " + (on ? "#191A16" : "#D2D1C6"),
+    borderRadius:"20px", cursor:"pointer", fontFamily:"inherit", letterSpacing:"-.005em",
+    background: on ? "#191A16" : "rgba(255,255,255,.6)", color: on ? "#F5F4EE" : "#5C5F59",
   });
 
   const today = new Date().toLocaleDateString("en-US", { month:"long", day:"numeric", year:"numeric" });
 
+  // Clicking a pip in the runway opens that card and scrolls to it, clearing any
+  // filter that would otherwise hide the row you just asked to see.
+  const pickFromRunway = (id) => {
+    if (id === "__gate") { setCat(cat === "opennow" ? "all" : "opennow"); setTierF("all"); return; }
+    const o = allOpps.find(x => x.id === id);
+    if (o) {
+      if (tierF !== "all" && o.tier !== Number(tierF)) setTierF("all");
+      const visible = cat === "all" || (cat === "opennow" ? isOpenNow(o) : cat === "actnow" ? isActNow(o) : o.cats.includes(cat));
+      if (!visible) setCat("all");
+    }
+    setExpanded(id);
+    setTimeout(() => {
+      const el = document.getElementById("opp-" + id);
+      if (el) el.scrollIntoView({ behavior:"smooth", block:"center" });
+    }, 60);
+  };
+
   if (!loaded) return h("div", null, "Loading…");
 
   return h("div", { style:{ padding:"0.5rem 0.25rem" } },
-    h("div", { style:{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:"0.75rem", flexWrap:"wrap", gap:"4px" } },
-      h("span", { style:{ fontSize:"16px", fontWeight:"700", color:"#1c1c1a" } }, "Summer 2027 Internship Tracker"),
-      h("span", { style:{ fontSize:"11px", color:"#8c8c88" } }, "Today: " + today),
+    h("div", { className:"masthead" },
+      h("div", null,
+        h("div", { className:"kicker" }, "Daniel M. Ho \u00B7 Carnegie Mellon \u00B7 IS & P&M \u00B7 Class of 2029"),
+        h("h1", null, "Summer 2027 Internship Tracker"),
+      ),
+      h("span", { className:"today" }, today),
     ),
 
-    h("div", { style:{ background:"#f4f3ef", border:"1px solid #e0dfd9", borderLeft:"3px solid #BA7517", borderRadius:"8px", padding:"11px 13px", marginBottom:"1rem" } },
-      h("div", { style:{ fontSize:"12px", fontWeight:"700", color:"#1c1c1a", marginBottom:"5px" } }, "Dates and links were re-checked on Aug 13, 2026"),
+    h("div", { style:{ background:"#FFFFFF", border:"1px solid #E1E0D7", borderLeft:"3px solid #BA7517", borderRadius:"10px", padding:"13px 15px", marginBottom:"18px", boxShadow:"0 1px 1px rgba(25,26,22,.03)" } },
+      h("div", { style:{ fontSize:"12px", fontWeight:"700", color:"#1c1c1a", marginBottom:"5px" } }, "Updated Aug 14, 2026 \u2014 27 sophomore-specific programs added, all 105 links fetched"),
       h("div", { style:{ fontSize:"12px", color:"#6b6b67", lineHeight:"1.6" } },
-        "Every date now carries a ",
+        "Every URL in this tracker was fetched with a real browser user-agent on Aug 14. Six were dead and have been repointed (AmPhil, Carnegie Learning, EY, KPMG, New America, and the Amex campus search); Palantir, Walmart and Wells Fargo were dead among the new additions and now point at working hubs. Each card shows ",
+        h("b", { style:{ fontWeight:"600" } }, "link checked"), ", ",
+        h("b", { style:{ fontWeight:"600" } }, "link not checkable"), " (the site bot-blocks, it will open fine for you), or ",
+        h("b", { style:{ fontWeight:"600" } }, "link unchecked"), ".",
+        h("br"), h("br"),
+        "Two things changed on the highest-priority rows. ",
+        h("b", { style:{ fontWeight:"600" } }, "PNC"), " is new and is the best structural fit here \u2014 sophomore-eligible, no identity restriction, no CS gate, Pittsburgh \u2014 but the live req says it posts for only two business days from Aug 3, so it is probably already closed and reposts as an evergreen requisition. ",
+        h("b", { style:{ fontWeight:"600" } }, "Vanguard C2C"), " opened mid-July, is rolling, and is 25 minutes from home. ",
+        h("b", { style:{ fontWeight:"600" } }, "Capital One AEIP"), " was re-read off the live posting and you are confirmed eligible: sophomore standing 2026-27, degree by Aug 2030, $89,000 annualized, corporate housing.",
+        h("br"), h("br"),
+        "Every entry is now editable \u2014 open a card and click ",
+        h("b", { style:{ fontWeight:"600" } }, "Edit this entry"), ". Edits are stored as overrides, so ",
+        h("b", { style:{ fontWeight:"600" } }, "Revert"), " restores the built-in version without touching your status or notes, and ",
+        h("b", { style:{ fontWeight:"600" } }, "Archive"), " hides a row without deleting it. Backup and restore carry all of it, and older backup files still restore cleanly.",
+        h("br"), h("br"),
+        "Every date still carries a ",
         h("b", { style:{ fontWeight:"600" } }, "confirmed"), " or ", h("b", { style:{ fontWeight:"600" } }, "estimate"),
         " label, visible when you open a card. Estimates are projections from prior cycles — the month is a hint, the day means nothing, and countdowns on them are prefixed with \"~\". Anything not explicitly re-checked defaults to estimate.",
         h("br"), h("br"),
@@ -825,21 +1553,31 @@ function App() {
     ),
 
     h("div", { style:{ display:"flex", flexWrap:"wrap", gap:"6px", marginBottom:"1rem" } },
-      h("button", { onClick:exportBackup, style:{ fontSize:"11px", padding:"5px 10px", borderRadius:"20px", border:"1px solid #d0cfc9", background:"transparent", color:"#6b6b67", cursor:"pointer" } }, "⬇ Backup (.json)"),
-      h("button", { onClick:triggerImport, style:{ fontSize:"11px", padding:"5px 10px", borderRadius:"20px", border:"1px solid #d0cfc9", background:"transparent", color:"#6b6b67", cursor:"pointer" } }, "⬆ Restore from backup"),
+      h("span", { style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"10px", color:"#8C8F88", marginRight:"auto", alignSelf:"center", letterSpacing:".01em" } },
+        "links checked " + LINKCHECK_DATE + " \u00B7 open a row, then \u201CEdit this entry\u201D"),
+      h("button", { onClick:exportBackup, style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"10.5px", padding:"6px 11px", borderRadius:"7px", border:"1px solid #D2D1C6", background:"rgba(255,255,255,.6)", color:"#5C5F59", cursor:"pointer" } }, "⬇ Backup (.json)"),
+      h("button", { onClick:triggerImport, style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"10.5px", padding:"6px 11px", borderRadius:"7px", border:"1px solid #D2D1C6", background:"rgba(255,255,255,.6)", color:"#5C5F59", cursor:"pointer" } }, "⬆ Restore from backup"),
       h("input", { ref:importInputRef, type:"file", accept:"application/json", onChange:handleImportFile, style:{ display:"none" } }),
-      h("button", { onClick:exportCSV, style:{ fontSize:"11px", padding:"5px 10px", borderRadius:"20px", border:"1px solid #d0cfc9", background:"transparent", color:"#6b6b67", cursor:"pointer" } }, "⬇ Export as spreadsheet (.csv)"),
+      h("button", { onClick:exportCSV, style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"10.5px", padding:"6px 11px", borderRadius:"7px", border:"1px solid #D2D1C6", background:"rgba(255,255,255,.6)", color:"#5C5F59", cursor:"pointer" } }, "⬇ Export as spreadsheet (.csv)"),
     ),
 
-    h("div", { style:{ display:"grid", gridTemplateColumns:"repeat(4,minmax(0,1fr))", gap:"8px", marginBottom:"1rem" } },
+    h(Runway, { opps: allOpps, onPick: pickFromRunway }),
+
+    h("div", { className:"stats" },
       [
-        { n: allOpps.length, label:"total", c:"#1c1c1a" },
-        { n: cnt("Researching","In progress"), label:"in progress", c:"#185FA5" },
-        { n: cnt("Applied","Waiting","Offer","Accepted"), label:"applied", c:"#534AB7" },
-        { n: actN, label:"act now", c:"#BA7517" },
-      ].map(s => h("div", { key:s.label, style:{ background:"#f4f3ef", borderRadius:"8px", padding:"10px 8px", textAlign:"center" } },
-        h("div", { style:{ fontSize:"22px", fontWeight:"600", color:s.c, lineHeight:1.1 } }, s.n),
-        h("div", { style:{ fontSize:"11px", color:"#8c8c88", marginTop:"2px" } }, s.label),
+        { n: allOpps.length, label:"total", c:"#1c1c1a", f:"all" },
+        { n: openN, label:"open now", c:"#0B7A55", f:"opennow" },
+        { n: actN, label:"act now", c:"#A8402B", f:"actnow" },
+        { n: cnt("Researching","In progress"), label:"in progress", c:"#185FA5", f:null },
+        { n: cnt("Applied","Waiting","Offer","Accepted"), label:"applied", c:"#534AB7", f:null },
+      ].map(s => h("button", {
+          key:s.label,
+          className:"stat" + (s.f && cat === s.f ? " on" : "") + (s.f ? " clickable" : ""),
+          onClick: s.f ? () => setCat(cat === s.f ? "all" : s.f) : undefined,
+          title: s.f ? "Filter the list to these" : undefined,
+        },
+        h("span", { className:"stat-n", style:{ color:s.c } }, s.n),
+        h("span", { className:"stat-l" }, s.label),
       ))
     ),
 
@@ -858,7 +1596,7 @@ function App() {
             style:{ fontSize:"12px", fontWeight:"600", padding:"7px 14px", borderRadius:"20px", border:"1px dashed #185FA5", background:"#E6F1FB", color:"#0C447C", cursor:"pointer", display:"inline-flex", alignItems:"center", gap:"5px" } },
             h(IPlus, { size:11, color:"#0C447C" }), "Add your own opportunity"
           )
-        : h(AddForm, { onAdd:addOpp, onCancel:()=>setShowForm(false) })
+        : h(OppForm, { onAdd:addOpp, onCancel:()=>setShowForm(false), mode:"add" })
     ),
 
     h("p", { style:{ fontSize:"12px", color:"#8c8c88", margin:"0 0 0.75rem" } },
@@ -869,31 +1607,37 @@ function App() {
       const tRows = rows.filter(o => o.tier === t);
       if (!tRows.length) return null;
       return h("div", { key:t },
-        h("p", { style:{ fontSize:"11px", fontWeight:"700", letterSpacing:"0.05em", color:"#8c8c88", textTransform:"uppercase", margin:"1.25rem 0 6px" } }, TL[t]),
+        h("p", { className:"tier-head" }, TL[t]),
         tRows.map(o => {
           const status = statuses[o.id] || "Not started";
           const note = notes[o.id] || "";
           const isExp = expanded === o.id;
           const st = SS[status] || SS["Not started"];
           const cd = countdownBadge(o);
-          return h("div", { key:o.id, style:{ borderRadius:"8px", border:"1px solid #e0dfd9", borderLeft:`3px solid ${TC[t]}`, marginBottom:"8px", background:"#fff", overflow:"hidden" } },
-            h("div", { onClick:()=>setExpanded(isExp?null:o.id), style:{ display:"flex", alignItems:"center", gap:"8px", padding:"10px 12px", cursor:"pointer" } },
+          return h("div", { key:o.id, id:"opp-"+o.id, className:"card" + (isExp ? " open" : ""),
+            style:{ borderLeft:`3px solid ${TC[t]}` } },
+            h("div", { onClick:()=>setExpanded(isExp?null:o.id), style:{ display:"flex", alignItems:"center", gap:"9px", padding:"12px 14px", cursor:"pointer" } },
               h("div", { style:{ flex:1, minWidth:0 } },
                 h("div", { style:{ display:"flex", alignItems:"center", gap:"5px", marginBottom:"2px" } },
-                  h("span", { style:{ fontWeight:"600", fontSize:"14px", color:"#1c1c1a", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" } }, o.org),
+                  h("span", { style:{ fontWeight:"600", fontSize:"14.5px", letterSpacing:"-.012em", color:"#191A16", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" } }, o.org),
                   o.eligNote && h(IWarn, { size:12, color:"#BA7517" }),
                   o.custom && h("span", { style:{ fontSize:"9px", padding:"1px 6px", borderRadius:"20px", background:CB.custom.bg, color:CB.custom.fg, fontWeight:"600", flexShrink:0 } }, "yours"),
+                  o.edited && h("span", { title:"You've edited this entry.", style:{ fontSize:"9px", padding:"1px 6px", borderRadius:"20px", background:"#E6F1FB", color:"#0C447C", fontWeight:"600", flexShrink:0 } }, "edited"),
+                  NEW_IDS.has(o.id) && h("span", { title:"Added in the Aug 14, 2026 sophomore-programs research pass.", style:{ fontSize:"9px", padding:"1px 6px", borderRadius:"20px", background:"#EAF3DE", color:"#173404", fontWeight:"600", flexShrink:0 } }, "new"),
                 ),
-                h("div", { style:{ fontSize:"12px", color:"#6b6b67", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" } }, o.role),
+                h("div", { style:{ fontSize:"12.5px", color:"#5C5F59", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", lineHeight:"1.4" } }, o.role),
               ),
-              h("span", { style:{ fontSize:"11px", fontWeight:"600", padding:"2px 8px", borderRadius:"20px", background:cd.bg, color:cd.fg, flexShrink:0, whiteSpace:"nowrap" } }, cd.label),
+              h("span", { style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"10.5px", fontWeight:"600", padding:"3px 9px", borderRadius:"6px", background:cd.bg, color:cd.fg, flexShrink:0, whiteSpace:"nowrap" } }, cd.label),
               h("select", { value:status, onChange:e=>{e.stopPropagation(); setStatus(o.id, e.target.value);}, onClick:e=>e.stopPropagation(),
                 style:{ fontSize:"11px", padding:"3px 6px", border:`1px solid ${st.fg}55`, borderRadius:"20px", cursor:"pointer", background:st.bg, color:st.fg, fontWeight:"600", flexShrink:0, maxWidth:"108px", fontFamily:"inherit" } },
                 STATUSES.map(s => h("option", { key:s, value:s }, s))
               ),
               isExp ? h(IChevUp, { size:14 }) : h(IChevDown, { size:14 }),
             ),
-            isExp && h("div", { style:{ borderTop:"1px solid #e0dfd9", padding:"12px 14px" } },
+            isExp && editingId === o.id && h("div", { style:{ borderTop:"1px solid #e0dfd9", padding:"12px 14px" } },
+              h(OppForm, { onAdd:addOpp, onCancel:()=>setEditingId(null), initial:o, mode:"edit" })
+            ),
+            isExp && editingId !== o.id && h("div", { style:{ borderTop:"1px solid #e0dfd9", padding:"12px 14px" } },
               o.eligNote && h("div", { style:{ background:"#FAEEDA", borderRadius:"6px", padding:"8px 10px", marginBottom:"10px", fontSize:"12px", color:"#633806", lineHeight:"1.5", display:"flex", gap:"6px" } },
                 h(IWarn, { size:13, color:"#633806", style:{ marginTop:"1px", flexShrink:0 } }),
                 h("span", null, o.eligNote)
@@ -909,6 +1653,8 @@ function App() {
                 (() => { const cm = CONF_META[confOf(o)]; return h("span", { title:cm.tip,
                   style:{ fontSize:"10px", fontWeight:"700", padding:"1px 7px", borderRadius:"20px", background:cm.bg, color:cm.fg, letterSpacing:"0.03em", cursor:"help",
                           border: confOf(o)==="estimate" ? "1px dashed "+cm.fg+"66" : "1px solid transparent" } }, cm.label); })(),
+                (() => { const ls = linkState(o.link); if (!ls) return null; return h("span", { title:ls.tip,
+                  style:{ fontSize:"10px", fontWeight:"700", padding:"1px 7px", borderRadius:"20px", background:ls.bg, color:ls.fg, letterSpacing:"0.03em", cursor:"help" } }, ls.label); })(),
               ),
               h("div", { style:{ fontSize:"11px", color:"#8c8c88", marginBottom:"10px", lineHeight:"1.5" } },
                 CONF_META[confOf(o)].tip,
@@ -936,7 +1682,14 @@ function App() {
                     style:{ fontSize:"12px", color:"#6b6b67", textDecoration:"none", display:"inline-flex", alignItems:"center", gap:"4px" } },
                     h(ILink,{size:12,color:"#6b6b67"}), "Search all postings"),
                 ),
-                o.custom && h("button", { onClick:()=>deleteOpp(o.id), style:{ fontSize:"11px", color:"#A32D2D", background:"transparent", border:"1px solid #f0c0c0", borderRadius:"20px", padding:"3px 10px", cursor:"pointer", display:"inline-flex", alignItems:"center", gap:"4px" } }, h(ITrash,{size:10,color:"#A32D2D"}), "Remove"),
+                h("span", { style:{ display:"inline-flex", gap:"6px", flexWrap:"wrap" } },
+                  h("button", { onClick:()=>setEditingId(o.id), style:{ fontSize:"11px", color:"#0C447C", background:"#E6F1FB", border:"1px solid #b9d3ee", borderRadius:"20px", padding:"3px 10px", cursor:"pointer", fontWeight:"600" } }, "Edit this entry"),
+                  o.edited && h("button", { onClick:()=>revertOpp(o.id), title:"Drop your edits, keep status and notes.",
+                    style:{ fontSize:"11px", color:"#6b6b67", background:"transparent", border:"1px solid #d0cfc9", borderRadius:"20px", padding:"3px 10px", cursor:"pointer" } }, "Revert"),
+                  h("button", { onClick:()=>hideOpp(o.id), title:"Move out of the main list without deleting.",
+                    style:{ fontSize:"11px", color:"#6b6b67", background:"transparent", border:"1px solid #d0cfc9", borderRadius:"20px", padding:"3px 10px", cursor:"pointer" } }, "Archive"),
+                  o.custom && h("button", { onClick:()=>deleteOpp(o.id), style:{ fontSize:"11px", color:"#A32D2D", background:"transparent", border:"1px solid #f0c0c0", borderRadius:"20px", padding:"3px 10px", cursor:"pointer", display:"inline-flex", alignItems:"center", gap:"4px" } }, h(ITrash,{size:10,color:"#A32D2D"}), "Remove"),
+                ),
               ),
               h("div", null,
                 h("div", { style:{ fontSize:"10px", fontWeight:"700", color:"#8c8c88", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:"4px" } }, "Notes"),
@@ -950,7 +1703,20 @@ function App() {
       );
     }),
 
-    h("p", { style:{ fontSize:"11px", fontWeight:"700", letterSpacing:"0.05em", color:"#8c8c88", textTransform:"uppercase", margin:"1.5rem 0 6px" } }, "Watching for 2028 (junior year cycle)"),
+    archived.length > 0 && h("div", null,
+      h("button", { onClick:()=>setShowHidden(!showHidden),
+        style:{ fontSize:"11px", fontWeight:"700", letterSpacing:"0.05em", color:"#8c8c88", textTransform:"uppercase", background:"transparent", border:"none", padding:"0", margin:"1.5rem 0 6px", cursor:"pointer" } },
+        (showHidden ? "\u25B4 " : "\u25BE ") + "Archived (" + archived.length + ")"),
+      showHidden && archived.map(o => h("div", { key:o.id, style:{ borderRadius:"8px", border:"1px dashed #d0cfc9", padding:"8px 12px", marginBottom:"6px", background:"#f8f7f3", display:"flex", alignItems:"center", gap:"10px" } },
+        h("div", { style:{ flex:1, minWidth:0 } },
+          h("div", { style:{ fontSize:"13px", fontWeight:"600" } }, o.org),
+          h("div", { style:{ fontSize:"12px", color:"#8c8c88", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" } }, o.role),
+        ),
+        h("button", { onClick:()=>unhideOpp(o.id), style:{ fontSize:"11px", color:"#0C447C", background:"#E6F1FB", border:"1px solid #b9d3ee", borderRadius:"20px", padding:"3px 10px", cursor:"pointer", flexShrink:0 } }, "Restore"),
+      ))
+    ),
+
+    h("p", { className:"tier-head" }, "Watching for 2028 (junior year cycle)"),
     WATCHLIST.map(w => h("div", { key:w.id, style:{ borderRadius:"8px", border:"1px dashed #d0cfc9", padding:"10px 12px", marginBottom:"8px", background:"#f8f7f3" } },
       h("div", { style:{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:"8px", marginBottom:"4px" } },
         h("span", { style:{ fontWeight:"600", fontSize:"13px", color:"#1c1c1a" } }, w.org),
@@ -960,8 +1726,10 @@ function App() {
       h("div", { style:{ fontSize:"12px", color:"#8c8c88", lineHeight:"1.5" } }, w.why),
     )),
 
-    h("p", { style:{ fontSize:"11px", color:"#8c8c88", marginTop:"1.5rem", borderTop:"1px solid #e0dfd9", paddingTop:"12px" } },
-      `${allOpps.length} opportunities (${OPPS.length} built-in + ${customOpps.length} yours) · Saved to this browser's storage. Download a backup periodically — clearing browser data or switching devices/browsers will not carry your saved statuses and notes over.`
+    h("p", { style:{ fontFamily:"'IBM Plex Mono', monospace", fontSize:"10px", lineHeight:"1.7", color:"#8C8F88", marginTop:"2rem", borderTop:"1px solid #E1E0D7", paddingTop:"14px" } },
+      `${allOpps.length} live opportunities (${OPPS.length} built-in + ${customOpps.length} yours${archived.length ? ", " + archived.length + " archived" : ""}) · `
+      + `${Object.keys(edits).length} edited by you · Links last checked ${LINKCHECK_DATE}. `
+      + `Saved to this browser's storage — download a backup periodically, because clearing browser data or switching devices will not carry your statuses, notes and edits over.`
     ),
   );
 }
